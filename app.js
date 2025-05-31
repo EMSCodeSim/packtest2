@@ -4,6 +4,8 @@ let totalDistance = 0;
 let lapCount = 0;
 let previousCoords = null;
 let timerInterval;
+let map, marker, pathLine;
+let pathCoords = [];
 
 const timeDisplay = document.getElementById("time");
 const paceDisplay = document.getElementById("pace");
@@ -22,6 +24,7 @@ modeSelector.addEventListener("change", () => {
   if (mode === "gps") {
     mapDiv.classList.remove("hidden");
     trackDiv.classList.add("hidden");
+    if (!map) initializeMap();
   } else {
     mapDiv.classList.add("hidden");
     trackDiv.classList.remove("hidden");
@@ -33,6 +36,8 @@ document.getElementById("startBtn").addEventListener("click", () => {
   totalDistance = 0;
   lapCount = 0;
   previousCoords = null;
+  pathCoords = [];
+  if (pathLine) pathLine.remove();
 
   document.getElementById("stopBtn").disabled = false;
   document.getElementById("startBtn").disabled = true;
@@ -42,7 +47,6 @@ document.getElementById("startBtn").addEventListener("click", () => {
   if (modeSelector.value === "gps") {
     startTracking();
   } else {
-    // Track mode could simulate lap animation in future
     console.log("Track mode started");
   }
 });
@@ -60,7 +64,6 @@ function startTimer() {
     const minutes = Math.floor(elapsed / 60);
     const seconds = elapsed % 60;
     timeDisplay.textContent = `${pad(minutes)}:${pad(seconds)}`;
-
     updateEstimate();
   }, 1000);
 }
@@ -79,6 +82,20 @@ function startTracking() {
     (pos) => {
       const { latitude, longitude } = pos.coords;
       const current = { lat: latitude, lng: longitude };
+
+      if (map) {
+        if (!marker) {
+          marker = L.marker(current).addTo(map);
+        } else {
+          marker.setLatLng(current);
+        }
+
+        pathCoords.push([latitude, longitude]);
+        if (pathLine) pathLine.setLatLngs(pathCoords);
+        else pathLine = L.polyline(pathCoords, { color: 'blue', weight: 5 }).addTo(map);
+
+        map.setView(current, 18);
+      }
 
       if (previousCoords) {
         const dist = getDistance(previousCoords, current);
@@ -112,16 +129,15 @@ function startTracking() {
 function updateEstimate() {
   const miles = totalDistance / 1609.34;
   const elapsed = (Date.now() - startTime) / 60000;
-
   const pace = miles > 0 ? elapsed / miles : 0;
   const estTime = pace * 3;
 
   if (estTime > 0) {
     const estMin = Math.floor(estTime);
     const estSec = Math.floor((estTime % 1) * 60);
-    estimateText.textContent = `Est. Finish: ${pad(estMin)}:${pad(estSec)}`;
+    estimateText.textContent = `${pad(estMin)}:${pad(estSec)}`;
   } else {
-    estimateText.textContent = "Est. Finish: --:--";
+    estimateText.textContent = "--:--";
   }
 }
 
@@ -132,10 +148,15 @@ function getDistance(c1, c2) {
   const Δφ = (c2.lat - c1.lat) * Math.PI / 180;
   const Δλ = (c2.lng - c1.lng) * Math.PI / 180;
 
-  const a = Math.sin(Δφ/2)**2 +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2)**2;
-
+  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
+}
+
+function initializeMap() {
+  map = L.map('map').setView([39.7392, -104.9903], 16); // Default to Denver
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
 }
