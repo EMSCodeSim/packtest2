@@ -24,7 +24,7 @@ modeSelector.addEventListener("change", () => {
   if (mode === "gps") {
     mapDiv.classList.remove("hidden");
     trackDiv.classList.add("hidden");
-    if (!map) initializeMap();
+    initializeMap();
   } else {
     mapDiv.classList.add("hidden");
     trackDiv.classList.remove("hidden");
@@ -46,8 +46,6 @@ document.getElementById("startBtn").addEventListener("click", () => {
 
   if (modeSelector.value === "gps") {
     startTracking();
-  } else {
-    console.log("Track mode started");
   }
 });
 
@@ -148,15 +146,24 @@ function getDistance(c1, c2) {
   const Δφ = (c2.lat - c1.lat) * Math.PI / 180;
   const Δλ = (c2.lng - c1.lng) * Math.PI / 180;
 
-  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a = Math.sin(Δφ / 2) ** 2 +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
 function initializeMap() {
-  map = L.map('map').setView([39.7392, -104.9903], 16); // Default to Denver
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
+  setTimeout(() => {
+    if (!map) {
+      map = L.map('map').setView([39.7392, -104.9903], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+    } else {
+      map.invalidateSize();
+    }
+  }, 200);
 }
