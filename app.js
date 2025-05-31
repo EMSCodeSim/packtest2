@@ -13,6 +13,20 @@ const distFill = document.getElementById("distance-bar-fill");
 const lapLabel = document.getElementById("lap-label");
 const lapFill = document.getElementById("lap-bar-fill");
 const estimateText = document.getElementById("estimate-text");
+const modeSelector = document.getElementById("modeSelector");
+const mapDiv = document.getElementById("map");
+const trackDiv = document.getElementById("track");
+
+modeSelector.addEventListener("change", () => {
+  const mode = modeSelector.value;
+  if (mode === "gps") {
+    mapDiv.classList.remove("hidden");
+    trackDiv.classList.add("hidden");
+  } else {
+    mapDiv.classList.add("hidden");
+    trackDiv.classList.remove("hidden");
+  }
+});
 
 document.getElementById("startBtn").addEventListener("click", () => {
   startTime = Date.now();
@@ -24,7 +38,13 @@ document.getElementById("startBtn").addEventListener("click", () => {
   document.getElementById("startBtn").disabled = true;
 
   startTimer();
-  startTracking();
+
+  if (modeSelector.value === "gps") {
+    startTracking();
+  } else {
+    // Track mode could simulate lap animation in future
+    console.log("Track mode started");
+  }
 });
 
 document.getElementById("stopBtn").addEventListener("click", () => {
@@ -65,7 +85,7 @@ function startTracking() {
         totalDistance += dist;
 
         const miles = totalDistance / 1609.34;
-        const laps = Math.floor(miles / 0.25); // 400m = 0.25 miles
+        const laps = Math.floor(miles / 0.25);
         if (laps > lapCount) lapCount = laps;
 
         distLabel.textContent = `${miles.toFixed(2)} / 3.00 miles`;
