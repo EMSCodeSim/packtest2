@@ -6,6 +6,8 @@ let previousCoords = null;
 let timerInterval;
 let map, marker, pathLine;
 let pathCoords = [];
+let trackStartTime = null;
+let pacerInterval;
 
 const timeDisplay = document.getElementById("time");
 const paceDisplay = document.getElementById("pace");
@@ -46,11 +48,14 @@ document.getElementById("startBtn").addEventListener("click", () => {
 
   if (modeSelector.value === "gps") {
     startTracking();
+  } else {
+    startTrackAnimation();
   }
 });
 
 document.getElementById("stopBtn").addEventListener("click", () => {
   clearInterval(timerInterval);
+  clearInterval(pacerInterval);
   navigator.geolocation.clearWatch(watchId);
   document.getElementById("stopBtn").disabled = true;
   document.getElementById("startBtn").disabled = false;
@@ -166,4 +171,58 @@ function initializeMap() {
       map.invalidateSize();
     }
   }, 200);
+}
+
+function startTrackAnimation() {
+  trackStartTime = Date.now();
+  clearInterval(pacerInterval);
+
+  pacerInterval = setInterval(() => {
+    const now = Date.now();
+    const elapsedSec = (now - trackStartTime) / 1000;
+    const goalTimeMin = parseFloat(document.getElementById("goalTime").value) || 45;
+    const totalTrackSeconds = goalTimeMin * 60;
+
+    const pacerProgress = elapsedSec / totalTrackSeconds;
+    const userMiles = totalDistance / 1609.34;
+    const userProgress = userMiles / 3;
+
+    const pacerAngle = pacerProgress * 360;
+    const userAngle = userProgress * 360;
+
+    moveDot("pacerDot", pacerAngle);
+    moveWalkerIcon("walkerIcon", userAngle);
+  }, 1000);
+}
+
+function moveDot(dotId, angle) {
+  const ellipse = document.querySelector("#trackSVG ellipse");
+  const cx = parseFloat(ellipse.getAttribute("cx"));
+  const cy = parseFloat(ellipse.getAttribute("cy"));
+  const rx = parseFloat(ellipse.getAttribute("rx"));
+  const ry = parseFloat(ellipse.getAttribute("ry"));
+
+  const rad = (angle - 90) * (Math.PI / 180);
+  const x = cx + rx * Math.cos(rad);
+  const y = cy + ry * Math.sin(rad);
+
+  const dot = document.getElementById(dotId);
+  dot.setAttribute("cx", x);
+  dot.setAttribute("cy", y);
+}
+
+function moveWalkerIcon(textId, angle) {
+  const ellipse = document.querySelector("#trackSVG ellipse");
+  const cx = parseFloat(ellipse.getAttribute("cx"));
+  const cy = parseFloat(ellipse.getAttribute("cy"));
+  const rx = parseFloat(ellipse.getAttribute("rx"));
+  const ry = parseFloat(ellipse.getAttribute("ry"));
+
+  const rad = (angle - 90) * (Math.PI / 180);
+  const x = cx + rx * Math.cos(rad);
+  const y = cy + ry * Math.sin(rad);
+
+  const icon = document.getElementById(textId);
+  icon.setAttribute("x", x);
+  icon.setAttribute("y", y);
 }
