@@ -109,7 +109,7 @@ function startTracking() {
         totalDistance += dist;
 
         const miles = totalDistance / 1609.34;
-        const lapsPerMile = parseFloat(lapsPerMileInput.value) || 12;
+        const lapsPerMile = parseFloat(lapsPerMileInput.value) || 4;
         const totalLaps = lapsPerMile * 3;
         const laps = Math.floor(miles * lapsPerMile);
         if (laps > lapCount) lapCount = laps;
@@ -187,19 +187,22 @@ function startTrackAnimation() {
     const now = Date.now();
     const elapsedSec = (now - trackStartTime) / 1000;
     const goalTimeMin = parseFloat(document.getElementById("goalTime").value) || 45;
-    const lapsPerMile = parseFloat(lapsPerMileInput.value) || 12;
+    const lapsPerMile = parseFloat(lapsPerMileInput.value) || 4;
 
-    const totalTrackSeconds = goalTimeMin * 60;
-    const pacerProgress = elapsedSec / totalTrackSeconds;
-
-    const userMiles = totalDistance / 1609.34;
-    const userProgress = userMiles / 3;
-
-    const pacerAngle = pacerProgress * 360;
-    const userAngle = userProgress * 360;
-
+    const lapDistanceMiles = 1 / lapsPerMile;
+    const lapDistanceMeters = lapDistanceMiles * 1609.34;
     const totalLaps = lapsPerMile * 3;
-    const userLaps = Math.floor(userMiles * lapsPerMile);
+    const userMiles = totalDistance / 1609.34;
+
+    const userLapProgress = (userMiles % lapDistanceMiles) / lapDistanceMiles;
+    const userLaps = Math.floor(userMiles / lapDistanceMiles);
+
+    const lapDurationSec = (goalTimeMin * 60) / totalLaps;
+    const pacerLapProgress = (elapsedSec % lapDurationSec) / lapDurationSec;
+
+    const userAngle = 360 - (userLapProgress * 360);
+    const pacerAngle = 360 - (pacerLapProgress * 360);
+
     lapLabel.textContent = `${userLaps} / ${totalLaps}`;
     lapDisplay.textContent = `${userLaps}/${totalLaps}`;
     lapFill.style.width = `${(userLaps / totalLaps) * 100}%`;
