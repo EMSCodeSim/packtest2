@@ -66,8 +66,14 @@
       font-size: 18px;
     }
 
+    #distanceCenter {
+      font-size: 20px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
     #progressBar {
-      height: 10px;
+      height: 14px;
       background: #555;
       width: 100%;
       margin-top: 6px;
@@ -78,6 +84,13 @@
       height: 100%;
       background: lime;
       width: 0%;
+    }
+
+    #estFinishTime {
+      font-size: 24px;
+      text-align: center;
+      margin-top: 12px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -92,7 +105,9 @@
         <button onclick="toggleRoad()">Road Mode</button>
         <button onclick="startStop()">Start</button>
         <div id="lapCount">Lap: 0 / 12</div>
-        <div id="stats">Time: 0:00 | Pace: 0.00 mph | Est. Finish: 0:00</div>
+        <div id="stats">Time: 0:00 | Pace: 0.00 min/mile</div>
+        <div id="distanceCenter">Distance: 0.00 mi</div>
+        <div id="estFinishTime">Est. Finish: 0:00</div>
       </div>
     </div>
   </div>
@@ -100,13 +115,6 @@
   <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
   <script>
-    let startTime, timerInterval;
-    let elapsedSeconds = 0;
-    const statsDisplay = document.getElementById("stats");
-    let lastPosition = null;
-    let totalDistance = 0; // in meters
-    const METERS_IN_MILE = 1609.34;
-
     window.onload = function () {
       document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
       document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
@@ -117,53 +125,7 @@
     }
 
     function startStop() {
-      if (!timerInterval) {
-        startTime = Date.now();
-        timerInterval = setInterval(updateTimer, 1000);
-        navigator.geolocation.watchPosition(updateLocation, null, { enableHighAccuracy: true });
-      } else {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-    }
-
-    function updateTimer() {
-      const now = Date.now();
-      elapsedSeconds = Math.floor((now - startTime) / 1000);
-      const minutes = Math.floor(elapsedSeconds / 60);
-      const seconds = elapsedSeconds % 60;
-
-      let miles = totalDistance / METERS_IN_MILE;
-      let pace = miles > 0 ? elapsedSeconds / 60 / miles : 0;
-      let remaining = (3 - miles) * pace; // estimate for 3 miles
-
-      const paceText = pace.toFixed(2);
-      const estFinish = remaining > 0 ? `${Math.floor(remaining)}:${Math.floor((remaining % 1) * 60).toString().padStart(2, '0')}` : "0:00";
-      statsDisplay.innerText = `Time: ${minutes}:${seconds.toString().padStart(2, '0')} | Pace: ${paceText} min/mile | Est. Finish: ${estFinish}`;
-    }
-
-    function updateLocation(position) {
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-
-      if (lastPosition) {
-        const d = calcDistance(lat, lon, lastPosition.lat, lastPosition.lon);
-        totalDistance += d;
-      }
-      lastPosition = { lat, lon };
-    }
-
-    function calcDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // metres
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+      alert("Track mode started – logic not implemented here");
     }
   </script>
 </body>
