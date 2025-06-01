@@ -1,132 +1,129 @@
-let timer = null;
-let startTime = null;
-let totalLaps = 12;
-let currentLap = 0;
-let distanceMiles = 0;
-let pacerInterval = null;
+let timerInterval, startTime;
+let totalDistance = 0;
+let lapLength = 0.25; // miles per lap
+let lapsPerMile = 4;
+let goalTime = 45; // minutes
+let watchID;
+let lastPosition = null;
+let dotAngle = 0;
+let pace = 0;
 
-const lapText = document.getElementById("lapText");
-const timeText = document.getElementById("timeText");
-const paceText = document.getElementById("paceText");
-const estText = document.getElementById("estText");
-const distanceFill = document.getElementById("distanceFill");
-
-const walkerIcon = document.getElementById("walkerIcon");
-const pacerDot = document.getElementById("pacerDot");
-
-let goalTimeMin = parseFloat(document.getElementById("goalTime").value);
-let lapsPerMile = parseFloat(document.getElementById("lapsPerMile").value);
-
-let animationFrame;
-let walkerAngle = 0;
-let pacerAngle = 0;
-let totalDistance = 3; // miles
-
-function updateStats() {
-  const now = new Date();
-  const elapsed = (now - startTime) / 1000; // seconds
-
-  const mins = Math.floor(elapsed / 60);
-  const secs = Math.floor(elapsed % 60);
-  timeText.textContent = `Time: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-
-  const milesWalked = (currentLap / lapsPerMile);
-  const pace = milesWalked > 0 ? elapsed / 60 / milesWalked : 0;
-  paceText.textContent = `Pace: ${pace.toFixed(1)} min/mi`;
-
-  const est = milesWalked > 0 ? pace * totalDistance : 0;
-  const estMin = Math.floor(est);
-  const estSec = Math.round((est - estMin) * 60);
-  estText.textContent = `Est: ${String(estMin).padStart(2, '0')}:${String(estSec).padStart(2, '0')}`;
-
-  const progressPercent = Math.min((milesWalked / totalDistance) * 100, 100);
-  distanceFill.style.width = `${progressPercent}%`;
-
-  lapText.textContent = `Lap: ${currentLap}/${totalLaps}`;
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
 }
 
-function animatePacer() {
-  const totalPaceSeconds = goalTimeMin * 60;
-  const laps = totalLaps;
-  const secondsPerLap = totalPaceSeconds / laps;
+function updateTimer() {
+  const now = Date.now();
+  const elapsed = (now - startTime) / 1000;
+  document.getElementById("timer").textContent = formatTime(elapsed);
+  document.getElementById("lapTime").textContent = "Lap Time: " + formatTime(elapsed % (60 / (goalTime / 3)));
 
-  let start = null;
-
-  function movePacer(timestamp) {
-    if (!start) start = timestamp;
-    const progress = (timestamp - start) / 1000;
-
-    pacerAngle = (progress / secondsPerLap) * 360 * laps % 360;
-    moveIconOnTrack(pacerDot, pacerAngle);
-
-    animationFrame = requestAnimationFrame(movePacer);
+  // update estimated finish
+  if (pace > 0) {
+    const milesLeft = 3 - totalDistance;
+    const estFinish = new Date(now + (milesLeft / pace) * 3600000);
+    document.getElementById("estFinish").textContent =
+      estFinish.getMinutes() > 50 ? "Est Finish: >50" :
+      "Est Finish: " + estFinish.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  } else {
+    document.getElementById("estFinish").textContent = "Est Finish: --";
   }
 
-  animationFrame = requestAnimationFrame(movePacer);
+  movePacerDot(elapsed);
 }
 
-function moveIconOnTrack(icon, angle) {
-  const radius = 130; // pixels
-  const centerX = 60;
-  const centerY = 300;
+function movePacerDot(elapsed) {
+  const track = document.getElementById("track");
+  const dot = document.getElementById("pacerDot");
+  const radius = track.offsetWidth / 2 - 10;
+  const angle = (elapsed / (goalTime * 60)) * 2 * Math.PI;
 
-  const rad = (angle - 90) * (Math.PI / 180); // offset by -90 to start top
-  const x = centerX + radius * Math.cos(rad);
-  const y = centerY + radius * Math.sin(rad);
+  const x = radius + radius * Math.cos(angle - Math.PI / 2);
+  const y = radius + radius * Math.sin(angle - Math.PI / 2);
+
+  dot.style.left = `${x}px`;
+  dot.style.top = `${y}px`;
+}
+
+function moveWalkerIcon(distance) {
+  const percent = (distance / 3);
+  const track = document.getElementById("track");
+  const icon = document.getElementById("walkerIcon");
+  const radius = track.offsetWidth / 2 - 10;
+  const angle = percent * 2 * Math.PI;
+
+  const x = radius + radius * Math.cos(angle - Math.PI / 2);
+  const y = radius + radius * Math.sin(angle - Math.PI / 2);
 
   icon.style.left = `${x}px`;
   icon.style.top = `${y}px`;
 }
 
-function simulateLapProgress() {
-  setInterval(() => {
-    currentLap += 1;
-    if (currentLap > totalLaps) currentLap = totalLaps;
-  }, (goalTimeMin * 60 * 1000) / totalLaps);
-}
-
-function startOrStop() {
-  if (timer) {
-    clearInterval(timer);
-    cancelAnimationFrame(animationFrame);
-    timer = null;
-    startTime = null;
-    return;
-  }
-
-  currentLap = 0;
+function startTest() {
+  goalTime = parseFloat(document.getElementById("goalTime").value);
   lapsPerMile = parseFloat(document.getElementById("lapsPerMile").value);
-  goalTimeMin = parseFloat(document.getElementById("goalTime").value);
-  totalLaps = Math.round(lapsPerMile * totalDistance);
+  lapLength = 1 / lapsPerMile;
+  totalDistance = 0;
+  startTime = Date.now();
+  lastPosition = null;
 
-  startTime = new Date();
-  timer = setInterval(updateStats, 1000);
-  simulateLapProgress();
-  animatePacer();
-  getLocation(); // Start GPS
-}
+  timerInterval = setInterval(updateTimer, 1000);
 
-function getLocation() {
   if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(showPosition, showError, {
+    watchID = navigator.geolocation.watchPosition(gpsSuccess, gpsError, {
       enableHighAccuracy: true,
-      maximumAge: 0
+      maximumAge: 1000,
+      timeout: 5000
     });
-  } else {
-    alert("Geolocation is not supported.");
   }
 }
 
-function showPosition(position) {
-  // Fake walker movement for demo
-  walkerAngle = (walkerAngle + 1) % 360;
-  moveIconOnTrack(walkerIcon, walkerAngle);
+function stopTest() {
+  clearInterval(timerInterval);
+  navigator.geolocation.clearWatch(watchID);
 }
 
-function showError(error) {
-  console.warn(`GPS Error: ${error.message}`);
+function gpsSuccess(position) {
+  const current = position.coords;
+  const now = Date.now();
+
+  if (lastPosition) {
+    const dist = calculateDistance(
+      lastPosition.latitude, lastPosition.longitude,
+      current.latitude, current.longitude
+    );
+
+    const timeElapsed = (now - lastPosition.timestamp) / 1000;
+    totalDistance += dist;
+
+    pace = (dist / (timeElapsed / 3600)); // mph
+    document.getElementById("pace").textContent = `Pace: ${pace.toFixed(2)} mph`;
+
+    const progress = Math.min((totalDistance / 3) * 100, 100);
+    document.getElementById("distanceFill").style.width = `${progress}%`;
+
+    moveWalkerIcon(totalDistance);
+  }
+
+  lastPosition = {
+    latitude: current.latitude,
+    longitude: current.longitude,
+    timestamp: now
+  };
 }
 
-function switchToRoadMode() {
-  alert("Road Mode view not implemented in this version.");
+function gpsError(err) {
+  console.error("GPS error:", err);
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 3958.8; // miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
