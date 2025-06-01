@@ -12,23 +12,26 @@
       text-align: center;
     }
 
-    .controls {
-      margin: 10px;
+    .header {
+      padding: 10px;
+      font-size: 1.2em;
     }
 
-    input, button {
-      padding: 10px;
-      margin: 5px;
+    .stats {
+      display: flex;
+      justify-content: space-around;
       font-size: 1em;
+      margin: 10px 0;
     }
 
     #roadContainer {
       position: relative;
-      width: 100%;
-      height: 70vh;
-      margin: 0 auto;
-      background: linear-gradient(to top, #bbb, #eee);
-      overflow: hidden;
+      width: 80%;
+      height: 60vh;
+      margin: auto;
+      background: linear-gradient(to top, #ddd, #fff);
+      border: 2px solid #888;
+      border-radius: 8px;
     }
 
     .roadLine {
@@ -47,20 +50,13 @@
       font-size: 24px;
     }
 
-    #stats {
-      margin-top: 10px;
-      font-size: 1.1em;
-    }
-
     .progress-bar {
+      width: 90%;
+      margin: 10px auto;
       height: 20px;
       background: #ccc;
-      margin: 10px;
       border-radius: 10px;
       overflow: hidden;
-      width: 90%;
-      margin-left: auto;
-      margin-right: auto;
     }
 
     .progress-fill {
@@ -68,15 +64,29 @@
       width: 0%;
       background: #4caf50;
     }
+
+    .controls {
+      margin: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 1em;
+    }
   </style>
 </head>
 <body>
 
-  <h2>Road Mode Pack Test</h2>
-  <div class="controls">
-    <label>Goal Time (min): <input type="number" id="goalTime" value="45"></label>
-    <button onclick="startRoadTest()">Start</button>
-    <button onclick="stopTest()">Stop</button>
+  <div class="header">
+    <strong>Road Mode Pack Test</strong>
+    <div>Goal Time: <input type="number" id="goalTime" value="45" style="width: 50px;"> min</div>
+  </div>
+
+  <div class="stats">
+    <div id="pace">Speed: 0.00 mph</div>
+    <div id="estFinish">Est Finish: --</div>
+    <div id="distance">Distance: 0.00 mi</div>
   </div>
 
   <div id="roadContainer">
@@ -85,14 +95,13 @@
     <div class="icon" id="userIcon">🚶‍♂️</div>
   </div>
 
-  <div id="stats">
-    <div id="timer">00:00</div>
-    <div id="pace">Pace: 0.00 mph</div>
-    <div id="estFinish">Est Finish: --</div>
-  </div>
-
   <div class="progress-bar">
     <div class="progress-fill" id="distanceFill"></div>
+  </div>
+
+  <div class="controls">
+    <button onclick="startRoadTest()">Start</button>
+    <button onclick="stopTest()">Stop</button>
   </div>
 
   <script src="road.js"></script>
