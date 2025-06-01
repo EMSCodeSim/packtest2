@@ -1,244 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Firefighter Pack Test</title>
+  <title>Pack Test Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
+      text-align: center;
       margin: 0;
-      padding: 0;
-      background: #f2f2f2;
+      background: #eef;
     }
-    .container {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      padding: 10px;
-    }
-    .track-wrapper {
+
+    .track-container {
       position: relative;
-      flex: 1;
-      margin: 10px;
-      height: 85vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .oval-track {
-      position: relative;
-      width: 80%;
-      height: 80%;
-      border: 6px solid #555;
-      border-radius: 45% / 50%;
-      box-sizing: border-box;
-    }
-    .lane {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      bottom: 10px;
-      border: 2px solid #999;
-      border-radius: 45% / 50%;
-    }
-    .dot, .walker {
-      width: 20px;
-      height: 20px;
-      position: absolute;
-      border-radius: 50%;
-      text-align: center;
-      line-height: 20px;
-      font-size: 14px;
-    }
-    .dot {
-      background-color: green;
-      color: white;
-    }
-    .walker {
-      background-color: yellow;
-      color: black;
-    }
-    .info {
-      flex: 1;
-      padding: 10px;
-    }
-    .info label {
-      display: block;
-      margin-top: 10px;
-    }
-    .info input {
-      width: 60px;
-      margin-right: 5px;
-    }
-    .bottom-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: #ddd;
-      padding: 5px;
-      box-sizing: border-box;
-      text-align: center;
-    }
-    .progress-bar {
-      width: 100%;
+      width: 90vw;
+      max-width: 400px;
+      aspect-ratio: 1/1;
+      margin: 20px auto;
       background: #ccc;
-      height: 20px;
-      position: relative;
-      margin-top: 5px;
+      border-radius: 50%;
+      border: 8px solid #999;
+      overflow: hidden;
     }
-    .progress-fill {
-      height: 100%;
-      background: green;
-      width: 0%;
-    }
-    .center-display {
+
+    .center-info {
       position: absolute;
-      top: 45%;
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 20px;
-      text-align: center;
+    }
+
+    .stat {
+      font-size: 1.2em;
+      margin: 5px 0;
+    }
+
+    .dot, .walker {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: green;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .walker {
+      background: yellow;
+    }
+
+    #distanceBar {
+      width: 90%;
+      margin: 20px auto;
+      height: 20px;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #distanceFill {
+      height: 100%;
+      width: 0%;
+      background: #4caf50;
+    }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    .controls input, .controls button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 1em;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="track-wrapper">
-      <div class="oval-track">
-        <div class="lane"></div>
-        <div class="dot" id="pacer">•</div>
-        <div class="walker" id="walker">🚶‍♂️</div>
-        <div class="center-display" id="centerDisplay"></div>
-      </div>
-    </div>
-    <div class="info">
-      <label>Laps/Mile <input id="lapsPerMile" value="4" maxlength="2"></label>
-      <label>Goal Time (min) <input id="goalTime" value="45" maxlength="2"></label>
-      <button id="startBtn">Start</button>
-      <div id="timer">Time: 0:00</div>
-      <div id="pace">Pace: 0 mph | 0 min/lap</div>
-      <div id="est">Est Finish: 0:00</div>
-      <div id="lapCount">Laps: 0</div>
-    </div>
+  <h2>Pack Test Tracker</h2>
+
+  <div class="controls">
+    <label>Goal Time (min): <input type="number" id="goalTime" value="45"></label>
+    <label>Laps/Mile: <input type="number" id="lapsPerMile" value="4"></label>
+    <button onclick="startTest()">Start</button>
+    <button onclick="stopTest()">Stop</button>
   </div>
-  <div class="bottom-bar">
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress"></div>
+
+  <div class="track-container" id="track">
+    <div class="dot" id="pacerDot"></div>
+    <div class="walker" id="walkerIcon">🚶‍♂️</div>
+    <div class="center-info">
+      <div class="stat" id="timer">00:00</div>
+      <div class="stat" id="pace">Pace: 0 mph</div>
+      <div class="stat" id="lapTime">Lap Time: 0:00</div>
+      <div class="stat" id="estFinish">Est Finish: --</div>
     </div>
   </div>
 
-  <script>
-    const walker = document.getElementById("walker");
-    const pacer = document.getElementById("pacer");
-    const timerDisplay = document.getElementById("timer");
-    const paceDisplay = document.getElementById("pace");
-    const estDisplay = document.getElementById("est");
-    const centerDisplay = document.getElementById("centerDisplay");
-    const progressBar = document.getElementById("progress");
-    const lapDisplay = document.getElementById("lapCount");
-    const startBtn = document.getElementById("startBtn");
-    const lapsInput = document.getElementById("lapsPerMile");
-    const goalInput = document.getElementById("goalTime");
+  <div id="distanceBar">
+    <div id="distanceFill"></div>
+  </div>
 
-    let startTime, interval, userDistance = 0, lapLength = 0.25, laps = 0;
-    let userSpeed = 0;
-    let lastCoords = null;
-
-    function updateWalkerPosition() {
-      const angle = (userDistance % 1) * 360;
-      const rad = angle * (Math.PI / 180);
-      const centerX = 150, centerY = 150, radius = 100;
-      const x = centerX + radius * Math.cos(rad);
-      const y = centerY + radius * Math.sin(rad);
-      walker.style.left = `${x}px`;
-      walker.style.top = `${y}px`;
-    }
-
-    function updatePacerPosition(elapsed) {
-      const goalTime = parseFloat(goalInput.value) || 45;
-      const lapsPerMile = parseFloat(lapsInput.value) || 4;
-      const lapSeconds = (goalTime * 60) / (lapsPerMile * 3);
-      const angle = ((elapsed % lapSeconds) / lapSeconds) * 360;
-      const rad = angle * (Math.PI / 180);
-      const centerX = 150, centerY = 150, radius = 80;
-      const x = centerX + radius * Math.cos(rad);
-      const y = centerY + radius * Math.sin(rad);
-      pacer.style.left = `${x}px`;
-      pacer.style.top = `${y}px`;
-    }
-
-    function startTimer() {
-      startTime = Date.now();
-      interval = setInterval(() => {
-        const now = Date.now();
-        const elapsedSec = Math.floor((now - startTime) / 1000);
-        const min = Math.floor(elapsedSec / 60);
-        const sec = elapsedSec % 60;
-        timerDisplay.textContent = `Time: ${min}:${sec.toString().padStart(2, '0')}`;
-
-        if (userSpeed > 0) {
-          const mph = (userSpeed * 3600) / 1609.34;
-          const minPerLap = lapLength / (userSpeed / 1609.34 / 60);
-          paceDisplay.textContent = `Pace: ${mph.toFixed(1)} mph | ${minPerLap.toFixed(1)} min/lap`;
-
-          const remaining = 3 - userDistance;
-          const est = userSpeed > 0 ? (remaining / userSpeed * 60) : 0;
-          estDisplay.textContent = `Est Finish: ${est > 50 ? '>50' : est.toFixed(1)} min`;
-        }
-
-        centerDisplay.textContent = `Distance: ${userDistance.toFixed(2)} mi`;
-        progressBar.style.width = `${(userDistance / 3) * 100}%`;
-        lapDisplay.textContent = `Laps: ${Math.floor(userDistance / lapLength)}`;
-
-        updatePacerPosition(elapsedSec);
-        updateWalkerPosition();
-      }, 1000);
-    }
-
-    function stopTimer() {
-      clearInterval(interval);
-    }
-
-    startBtn.addEventListener("click", () => {
-      if (interval) {
-        stopTimer();
-        interval = null;
-        startBtn.textContent = "Start";
-      } else {
-        startTimer();
-        startBtn.textContent = "Stop";
-      }
-    });
-
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          if (lastCoords) {
-            const d = haversine(lastCoords.lat, lastCoords.lon, latitude, longitude);
-            userDistance += d;
-            userSpeed = d * 3600;
-          }
-          lastCoords = { lat: latitude, lon: longitude };
-        },
-        (err) => console.error(err),
-        { enableHighAccuracy: true }
-      );
-    }
-
-    function haversine(lat1, lon1, lat2, lon2) {
-      const R = 3958.8;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1 * Math.PI / 180) *
-                Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) ** 2;
-      return R * 2 * Math.asin(Math.sqrt(a));
-    }
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
