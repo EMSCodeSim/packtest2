@@ -3,7 +3,6 @@ let lapsPerMile = 4;
 let goalTime = 45;
 let lapGoal = 12;
 let lapCount = 0;
-let totalDistance = 0;
 let startTime = null;
 let timerInterval = null;
 
@@ -25,7 +24,6 @@ function startTest() {
     document.getElementById('trackScreen').classList.add('active');
     startTrackMode();
   }
-  // Future: Road mode logic here
 }
 
 // Stop logic
@@ -39,7 +37,7 @@ function stopTest() {
 function startTrackMode() {
   startTime = Date.now();
   timerInterval = setInterval(updateTrackStats, 1000);
-  animateDots();
+  animatePacerDot();
 }
 
 function updateTrackStats() {
@@ -59,6 +57,9 @@ function updateTrackStats() {
   const est = isFinite(estFinishMin) ? formatTime(estFinishMin) : '--:--';
   document.getElementById('trackEstimateText').textContent = est;
   document.getElementById('lapCounterText').textContent = `Lap ${lapsCompleted} of ${lapGoal}`;
+
+  const progressPercent = (lapsCompleted / lapGoal) * 100;
+  document.getElementById('lapProgressFill').style.width = `${Math.min(progressPercent, 100)}%`;
 }
 
 function formatTime(mins) {
@@ -69,41 +70,31 @@ function formatTime(mins) {
 
 // Oval animation logic
 let angle = 0;
-function animateDots() {
+function animatePacerDot() {
   const cx = 150;
   const cy = 100;
   const rx = 100;
-  const ry = 70;
-  let walkerAngle = 0;
-  let lapsDone = 0;
+  const ry = 85;
 
   function drawFrame() {
     const elapsed = (Date.now() - startTime) / 1000;
     const percentComplete = Math.min(elapsed / (goalTime * 60), 1);
     angle = 360 * percentComplete;
 
-    // PACER DOT
     const rad = angle * Math.PI / 180;
     const px = cx + rx * Math.cos(rad);
     const py = cy - ry * Math.sin(rad);
     document.getElementById('pacerDot').setAttribute('cx', px);
     document.getElementById('pacerDot').setAttribute('cy', py);
 
-    // WALKER DOT (simulate lap progression every 20s)
-    walkerAngle += 0.3;
-    const wrad = walkerAngle * Math.PI / 180;
-    const wx = cx + rx * Math.cos(wrad);
-    const wy = cy - ry * Math.sin(wrad);
-    document.getElementById('walkerIcon').setAttribute('x', wx);
-    document.getElementById('walkerIcon').setAttribute('y', wy);
-
-    // Count laps if full rotation
-    if (walkerAngle >= 360) {
-      walkerAngle -= 360;
+    // Count lap every full loop
+    if (angle >= 360) {
+      angle = 0;
       lapCount += 1;
     }
 
     requestAnimationFrame(drawFrame);
   }
+
   requestAnimationFrame(drawFrame);
 }
