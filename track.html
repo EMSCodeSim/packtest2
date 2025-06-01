@@ -103,9 +103,9 @@
         <label>🚶 <input type="number" id="lapsPerMile"> laps/mile</label><br>
         <label>⏱️ <input type="number" id="goalTime"> min</label><br>
         <button onclick="toggleRoad()">Road Mode</button>
-        <button onclick="startStop()">Start</button>
+        <button onclick="startStop()" id="startBtn">Start</button>
         <div id="lapCount">Lap: 0 / 12</div>
-        <div id="stats">Time: 0:00 | Pace: 0.00 min/mile</div>
+        <div id="stats">Time: 0:00 | Pace: 0.00 min/lap</div>
         <div id="distanceCenter">Distance: 0.00 mi</div>
         <div id="estFinishTime">Est. Finish: 0:00</div>
       </div>
@@ -115,6 +115,9 @@
   <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
   <script>
+    let startTime, timerInterval;
+    let isRunning = false;
+
     window.onload = function () {
       document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
       document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
@@ -125,7 +128,31 @@
     }
 
     function startStop() {
-      alert("Track mode started – logic not implemented here");
+      const btn = document.getElementById("startBtn");
+      if (isRunning) {
+        clearInterval(timerInterval);
+        btn.textContent = "Start";
+        isRunning = false;
+      } else {
+        startTime = Date.now();
+        timerInterval = setInterval(updateTime, 1000);
+        btn.textContent = "Stop";
+        isRunning = true;
+      }
+    }
+
+    function updateTime() {
+      const now = Date.now();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      const pacePerLap = (elapsed / 60).toFixed(2);
+
+      document.getElementById("stats").textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')} | Pace: ${pacePerLap} min/lap`;
+
+      const goalTime = parseFloat(document.getElementById("goalTime").value);
+      const estFinish = goalTime; // Placeholder for actual pace logic
+      document.getElementById("estFinishTime").textContent = `Est. Finish: ${estFinish}:00`;
     }
   </script>
 </body>
