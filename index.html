@@ -13,22 +13,27 @@
       background: #121212;
       color: white;
     }
+
     .screen {
       display: none;
       padding: 16px;
       max-width: 480px;
       margin: auto;
     }
+
     .active {
       display: block;
     }
+
     h1, h2 {
       text-align: center;
       color: #ff4c4c;
     }
+
     p {
       text-align: center;
     }
+
     button, select, input {
       display: block;
       width: 90%;
@@ -38,11 +43,13 @@
       border-radius: 8px;
       border: none;
     }
+
     button {
       background: #ff4c4c;
       color: white;
       font-weight: bold;
     }
+
     input {
       background: #fff;
       color: #000;
@@ -54,10 +61,13 @@
       height: 100vh;
       overflow: hidden;
     }
+
     #trackSVG {
       width: 100%;
-      height: 100%;
+      height: 85vh;
+      display: block;
     }
+
     #trackEstimateText, #lapCounterText, #timeText, #paceText {
       position: absolute;
       color: #ffcc00;
@@ -66,28 +76,45 @@
       text-align: center;
       width: 100%;
     }
-    #trackEstimateText { top: 30%; }
-    #lapCounterText { top: 40%; }
-    #timeText { top: 50%; }
-    #paceText { top: 60%; }
+
+    #trackEstimateText { top: 25%; }
+    #lapCounterText { top: 35%; }
+    #timeText { top: 45%; }
+    #paceText { top: 55%; }
 
     #trackBtnGroup {
       position: absolute;
-      bottom: 30px;
+      bottom: 20px;
       width: 100%;
       text-align: center;
     }
+
     #trackBtnGroup button {
       width: 40%;
       margin: 10px;
+    }
+
+    #lapProgress {
+      height: 10px;
+      background: #444;
+      border-radius: 5px;
+      margin: 5px 16px;
+      overflow: hidden;
+    }
+
+    #lapProgressFill {
+      height: 100%;
+      background: lime;
+      width: 0%;
     }
 
     #pacerDot {
       r: 6;
       fill: limegreen;
     }
+
     #walkerIcon {
-      font-size: 18px;
+      display: none;
     }
   </style>
 </head>
@@ -116,21 +143,24 @@
   <!-- Track Screen -->
   <div id="trackScreen" class="screen">
     <svg id="trackSVG" viewBox="0 0 300 200">
-      <ellipse cx="150" cy="100" rx="100" ry="70" stroke="#888" stroke-width="4" fill="none"/>
-      <circle id="pacerDot" cx="150" cy="30" r="6" fill="lime" />
-      <text id="walkerIcon" x="150" y="30" text-anchor="middle">🚶‍♂️</text>
+      <ellipse cx="150" cy="100" rx="100" ry="85" stroke="#888" stroke-width="4" fill="none"/>
+      <circle id="pacerDot" cx="150" cy="15" r="6" fill="lime" />
     </svg>
+
     <div id="trackEstimateText">--:--</div>
     <div id="lapCounterText">Lap 0 of 12</div>
     <div id="timeText">Time: 00:00</div>
     <div id="paceText">Pace: --</div>
+
+    <div id="lapProgress">
+      <div id="lapProgressFill"></div>
+    </div>
+
     <div id="trackBtnGroup">
       <button onclick="stopTest()">Stop</button>
     </div>
   </div>
 
-  <!-- Leaflet (for future Road Mode) -->
-  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
