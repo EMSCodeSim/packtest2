@@ -6,9 +6,9 @@
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #121212;
-      color: #fff;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
       overflow: hidden;
     }
     #trackContainer {
@@ -23,15 +23,15 @@
       position: relative;
       width: 90%;
       aspect-ratio: 2/3;
-      border: 6px solid #888;
+      border: 6px solid #ccc;
       border-radius: 50% / 40%;
       box-sizing: border-box;
-      background: #1e1e1e;
+      background: #222;
     }
     .dot, .walker {
       position: absolute;
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       transform: translate(-50%, -50%);
     }
@@ -40,48 +40,37 @@
 
     #trackInfo {
       position: absolute;
-      top: 12px;
+      top: 30px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
     }
 
     #trackInfo input {
-      width: 50px;
-      font-size: 16px;
-      padding: 4px;
-      margin: 6px;
+      width: 40px;
+      font-size: 14px;
+      padding: 2px 4px;
+      margin: 4px;
       text-align: center;
-      border-radius: 6px;
-      border: none;
     }
     #trackInfo button {
-      padding: 10px 18px;
-      font-size: 18px;
-      margin-top: 12px;
-      margin-right: 6px;
-      background: #444;
-      color: white;
-      border: none;
-      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 16px;
+      margin-top: 10px;
+      margin-right: 5px;
     }
 
     #lapCount {
-      margin-top: 10px;
-      font-size: 22px;
-      font-weight: bold;
-    }
-
-    #stats {
-      margin-top: 10px;
-      font-size: 20px;
+      text-align: center;
+      margin-top: 5px;
+      font-size: 18px;
     }
 
     #progressBar {
-      height: 14px;
-      background: #444;
+      height: 10px;
+      background: #555;
       width: 100%;
-      margin-top: 10px;
+      margin-top: 6px;
       position: relative;
     }
 
@@ -103,19 +92,14 @@
         <button onclick="toggleRoad()">Road Mode</button>
         <button onclick="startStop()">Start</button>
         <div id="lapCount">Lap: 0 / 12</div>
-        <div id="stats">Time: 0s | Pace: 0m/lap | Est. Finish: --</div>
+        <div id="stats">Time: 0 min | Pace: 0 min/mile | Est. Finish: 0 min</div>
       </div>
     </div>
   </div>
+
   <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
   <script>
-    let angle = 0;
-    let walkerAngle = 0;
-    let interval;
-    let startTime;
-    let gpsSpeed = 0;
-
     window.onload = function () {
       document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
       document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
@@ -126,47 +110,7 @@
     }
 
     function startStop() {
-      const laps = parseFloat(document.getElementById('lapsPerMile').value);
-      const goalTime = parseFloat(document.getElementById('goalTime').value);
-      const lapDistance = 1609.34 / laps; // meters per lap
-      const lapTime = (goalTime * 60) / laps; // seconds per lap
-      const angularSpeed = -360 / lapTime; // move clockwise
-      startTime = Date.now();
-
-      if (interval) clearInterval(interval);
-      interval = setInterval(() => {
-        const now = Date.now();
-        const elapsed = (now - startTime) / 1000;
-        const estFinish = (goalTime * 60).toFixed(0);
-        angle = (elapsed * angularSpeed + 360) % 360;
-        walkerAngle = (walkerAngle - gpsSpeed * 1.8 + 360) % 360;
-
-        updateDot('pacerDot', angle);
-        updateDot('walkerIcon', walkerAngle);
-
-        document.getElementById('stats').textContent = `Time: ${Math.floor(elapsed)}s | Pace: ${lapTime.toFixed(1)}s/lap | Est. Finish: ${estFinish}s`;
-      }, 1000);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(pos => {
-          if (pos.coords.speed) gpsSpeed = pos.coords.speed;
-        }, err => console.log(err), {
-          enableHighAccuracy: true
-        });
-      }
-    }
-
-    function updateDot(id, deg) {
-      const el = document.getElementById(id);
-      const radiusX = document.getElementById('track').offsetWidth / 2 - 20;
-      const radiusY = document.getElementById('track').offsetHeight / 2 - 20;
-      const centerX = document.getElementById('track').offsetWidth / 2;
-      const centerY = document.getElementById('track').offsetHeight / 2;
-      const rad = deg * Math.PI / 180;
-      const x = centerX + radiusX * Math.cos(rad);
-      const y = centerY + radiusY * Math.sin(rad);
-      el.style.left = `${x}px`;
-      el.style.top = `${y}px`;
+      alert("Track mode started – logic not implemented here");
     }
   </script>
 </body>
