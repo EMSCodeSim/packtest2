@@ -1,109 +1,116 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Road Mode Pack Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #eef;
-      margin: 0;
-      padding: 0;
-      text-align: center;
+let goalTime = 45;
+let startTime;
+let timerInterval;
+let watchID;
+let lastPosition = null;
+let totalDistance = 0;
+let pace = 0;
+
+const roadContainer = document.getElementById("roadContainer");
+const pacerDot = document.getElementById("pacerDot");
+const userIcon = document.getElementById("userIcon");
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function startRoadTest() {
+  goalTime = parseFloat(document.getElementById("goalTime").value);
+  startTime = Date.now();
+  totalDistance = 0;
+  lastPosition = null;
+
+  if (navigator.geolocation) {
+    watchID = navigator.geolocation.watchPosition(gpsSuccess, gpsError, {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 5000
+    });
+  }
+
+  timerInterval = setInterval(updateTimer, 1000);
+}
+
+function stopTest() {
+  clearInterval(timerInterval);
+  if (watchID) navigator.geolocation.clearWatch(watchID);
+}
+
+function gpsSuccess(position) {
+  const current = position.coords;
+  const now = Date.now();
+
+  if (lastPosition) {
+    const dist = calculateDistance(
+      lastPosition.latitude, lastPosition.longitude,
+      current.latitude, current.longitude
+    );
+
+    const timeElapsed = (now - lastPosition.timestamp) / 1000;
+    totalDistance += dist;
+
+    pace = (dist / (timeElapsed / 3600)); // mph
+    updateStats();
+    updatePacerDot();
+
+    const percent = Math.min((totalDistance / 3) * 100, 100);
+    document.getElementById("distanceFill").style.width = `${percent}%`;
+
+    if (pace > 0) {
+      const milesLeft = 3 - totalDistance;
+      const finishTime = new Date(now + (milesLeft / pace) * 3600000);
+      document.getElementById("estFinish").textContent =
+        finishTime.getMinutes() > 50 ? "Est Finish: >50" :
+        "Est Finish: " + finishTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    } else {
+      document.getElementById("estFinish").textContent = "Est Finish: --";
     }
+  }
 
-    .header {
-      padding: 10px;
-      font-size: 1.2em;
-    }
+  lastPosition = {
+    latitude: current.latitude,
+    longitude: current.longitude,
+    timestamp: now
+  };
+}
 
-    .stats {
-      display: flex;
-      justify-content: space-around;
-      font-size: 1em;
-      margin: 10px 0;
-    }
+function gpsError(err) {
+  console.error("GPS error:", err);
+}
 
-    #roadContainer {
-      position: relative;
-      width: 80%;
-      height: 60vh;
-      margin: auto;
-      background: linear-gradient(to top, #ddd, #fff);
-      border: 2px solid #888;
-      border-radius: 8px;
-    }
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 3958.8; // miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-    .roadLine {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 10px;
-      height: 100%;
-      background: black;
-    }
+function updateTimer() {
+  const elapsed = (Date.now() - startTime) / 1000;
 
-    .icon {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 24px;
-    }
+  // Recalculate pacer location vs user
+  updatePacerDot();
+}
 
-    .progress-bar {
-      width: 90%;
-      margin: 10px auto;
-      height: 20px;
-      background: #ccc;
-      border-radius: 10px;
-      overflow: hidden;
-    }
+function updatePacerDot() {
+  const containerHeight = roadContainer.offsetHeight;
+  const elapsed = (Date.now() - startTime) / 1000;
 
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: #4caf50;
-    }
+  const pacerDistance = (elapsed / (goalTime * 60)) * 3; // miles
+  const distanceGap = totalDistance - pacerDistance;
 
-    .controls {
-      margin: 10px;
-    }
+  // Place pacer relative to user
+  const yOffset = distanceGap * containerHeight / 3;
+  const topPercent = 50 - (yOffset / containerHeight) * 100;
+  pacerDot.style.top = `${topPercent}%`;
+}
 
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      font-size: 1em;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="header">
-    <strong>Road Mode Pack Test</strong>
-    <div>Goal Time: <input type="number" id="goalTime" value="45" style="width: 50px;"> min</div>
-  </div>
-
-  <div class="stats">
-    <div id="pace">Speed: 0.00 mph</div>
-    <div id="estFinish">Est Finish: --</div>
-    <div id="distance">Distance: 0.00 mi</div>
-  </div>
-
-  <div id="roadContainer">
-    <div class="roadLine"></div>
-    <div class="icon" id="pacerDot">●</div>
-    <div class="icon" id="userIcon">🚶‍♂️</div>
-  </div>
-
-  <div class="progress-bar">
-    <div class="progress-fill" id="distanceFill"></div>
-  </div>
-
-  <div class="controls">
-    <button onclick="startRoadTest()">Start</button>
-    <button onclick="stopTest()">Stop</button>
-  </div>
-
-  <script src="road.js"></script>
-</body>
-</html>
+function updateStats() {
+  document.getElementById("pace").textContent = `Speed: ${pace.toFixed(2)} mph`;
+  document.getElementById("distance").textContent = `Distance: ${totalDistance.toFixed(2)} mi`;
+}
