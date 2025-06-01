@@ -3,197 +3,241 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pack Test Tracker</title>
+  <title>Firefighter Pack Test</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       margin: 0;
       padding: 0;
       background: #f2f2f2;
+    }
+    .container {
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 10px;
     }
-    .track-container {
+    .track-wrapper {
       position: relative;
-      width: 90vw;
-      height: 70vh;
-      margin-top: 20px;
-      background: #e0e0e0;
-      border-radius: 200px / 100px;
-      overflow: hidden;
+      flex: 1;
+      margin: 10px;
+      height: 85vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .runner, .pacer {
+    .oval-track {
+      position: relative;
+      width: 80%;
+      height: 80%;
+      border: 6px solid #555;
+      border-radius: 45% / 50%;
+      box-sizing: border-box;
+    }
+    .lane {
       position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      border: 2px solid #999;
+      border-radius: 45% / 50%;
+    }
+    .dot, .walker {
       width: 20px;
       height: 20px;
+      position: absolute;
       border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 20px;
+      font-size: 14px;
     }
-    .runner {
-      background-color: yellow;
-    }
-    .pacer {
+    .dot {
       background-color: green;
+      color: white;
+    }
+    .walker {
+      background-color: yellow;
+      color: black;
     }
     .info {
-      margin-top: 20px;
+      flex: 1;
+      padding: 10px;
+    }
+    .info label {
+      display: block;
+      margin-top: 10px;
+    }
+    .info input {
+      width: 60px;
+      margin-right: 5px;
+    }
+    .bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #ddd;
+      padding: 5px;
+      box-sizing: border-box;
       text-align: center;
     }
-    .inputs {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
     .progress-bar {
-      width: 90vw;
-      height: 20px;
+      width: 100%;
       background: #ccc;
-      margin-top: 10px;
+      height: 20px;
       position: relative;
+      margin-top: 5px;
     }
-    .progress {
+    .progress-fill {
       height: 100%;
-      background: #4caf50;
+      background: green;
       width: 0%;
+    }
+    .center-display {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 20px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="track-container">
-    <div id="runner" class="runner"></div>
-    <div id="pacer" class="pacer"></div>
-  </div>
-  <div class="info">
-    <div id="distance">Distance: 0.00 mi</div>
-    <div id="laps">Laps: 0</div>
-    <div id="pace">Pace: 0 mph / 0.00 min/lap</div>
-    <div id="estFinish">Est. Finish: 0 min</div>
-    <div class="inputs">
-      <input id="lapsPerMile" type="number" value="4" size="2" /> Laps/Mile
-      <input id="goalTime" type="number" value="45" size="2" /> Goal (min)
-      <button onclick="startTracking()">Start</button>
+  <div class="container">
+    <div class="track-wrapper">
+      <div class="oval-track">
+        <div class="lane"></div>
+        <div class="dot" id="pacer">•</div>
+        <div class="walker" id="walker">🚶‍♂️</div>
+        <div class="center-display" id="centerDisplay"></div>
+      </div>
+    </div>
+    <div class="info">
+      <label>Laps/Mile <input id="lapsPerMile" value="4" maxlength="2"></label>
+      <label>Goal Time (min) <input id="goalTime" value="45" maxlength="2"></label>
+      <button id="startBtn">Start</button>
+      <div id="timer">Time: 0:00</div>
+      <div id="pace">Pace: 0 mph | 0 min/lap</div>
+      <div id="est">Est Finish: 0:00</div>
+      <div id="lapCount">Laps: 0</div>
     </div>
   </div>
-  <div class="progress-bar">
-    <div id="progress" class="progress"></div>
+  <div class="bottom-bar">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
+    </div>
   </div>
 
   <script>
-    let watchID;
-    let startTime;
-    let totalDistance = 0;
-    let prevCoords = null;
-    let laps = 0;
+    const walker = document.getElementById("walker");
+    const pacer = document.getElementById("pacer");
+    const timerDisplay = document.getElementById("timer");
+    const paceDisplay = document.getElementById("pace");
+    const estDisplay = document.getElementById("est");
+    const centerDisplay = document.getElementById("centerDisplay");
+    const progressBar = document.getElementById("progress");
+    const lapDisplay = document.getElementById("lapCount");
+    const startBtn = document.getElementById("startBtn");
+    const lapsInput = document.getElementById("lapsPerMile");
+    const goalInput = document.getElementById("goalTime");
 
-    const runner = document.getElementById('runner');
-    const pacer = document.getElementById('pacer');
-    const distanceDisplay = document.getElementById('distance');
-    const lapsDisplay = document.getElementById('laps');
-    const paceDisplay = document.getElementById('pace');
-    const estDisplay = document.getElementById('estFinish');
-    const progress = document.getElementById('progress');
+    let startTime, interval, userDistance = 0, lapLength = 0.25, laps = 0;
+    let userSpeed = 0;
+    let lastCoords = null;
 
-    function startTracking() {
-      startTime = Date.now();
-      totalDistance = 0;
-      laps = 0;
-      prevCoords = null;
-
-      if (navigator.geolocation) {
-        watchID = navigator.geolocation.watchPosition(updatePosition, showError, {
-          enableHighAccuracy: true,
-          maximumAge: 1000
-        });
-      } else {
-        alert('Geolocation is not supported by this browser.');
-      }
-      animatePacer();
-    }
-
-    function updatePosition(position) {
-      const { latitude, longitude } = position.coords;
-      if (prevCoords) {
-        const dist = calcDistance(latitude, longitude, prevCoords.latitude, prevCoords.longitude);
-        totalDistance += dist;
-        const lapsPerMile = parseFloat(document.getElementById('lapsPerMile').value);
-        const lapDistance = 1 / lapsPerMile;
-        laps = Math.floor(totalDistance / lapDistance);
-        const elapsedTime = (Date.now() - startTime) / 1000 / 60;
-        const mph = totalDistance / (elapsedTime / 60);
-        const pacePerLap = (elapsedTime / laps).toFixed(2);
-
-        distanceDisplay.textContent = `Distance: ${totalDistance.toFixed(2)} mi`;
-        lapsDisplay.textContent = `Laps: ${laps}`;
-        paceDisplay.textContent = `Pace: ${mph.toFixed(2)} mph / ${isNaN(pacePerLap) ? '0.00' : pacePerLap} min/lap`;
-
-        const goal = parseFloat(document.getElementById('goalTime').value);
-        let est = (goal * totalDistance) / (totalDistance || 1);
-        if (est > 50) estDisplay.textContent = 'Est. Finish: >50 min';
-        else estDisplay.textContent = `Est. Finish: ${Math.round(est)} min`;
-
-        let progressPercent = (totalDistance / 3) * 100;
-        if (progressPercent > 100) progressPercent = 100;
-        progress.style.width = progressPercent + '%';
-
-        moveRunnerIcon(elapsedTime);
-      }
-      prevCoords = { latitude, longitude };
-    }
-
-    function moveRunnerIcon(t) {
-      const angle = (t * 20) % 360; // Simulated movement speed
+    function updateWalkerPosition() {
+      const angle = (userDistance % 1) * 360;
       const rad = angle * (Math.PI / 180);
-      const radiusX = 180;
-      const radiusY = 90;
-      const centerX = 0.45 * window.innerWidth;
-      const centerY = 0.35 * window.innerHeight;
-      const x = centerX + radiusX * Math.cos(rad);
-      const y = centerY + radiusY * Math.sin(rad);
-      runner.style.left = x + 'px';
-      runner.style.top = y + 'px';
+      const centerX = 150, centerY = 150, radius = 100;
+      const x = centerX + radius * Math.cos(rad);
+      const y = centerY + radius * Math.sin(rad);
+      walker.style.left = `${x}px`;
+      walker.style.top = `${y}px`;
     }
 
-    function animatePacer() {
-      const goal = parseFloat(document.getElementById('goalTime').value);
-      const lapsPerMile = parseFloat(document.getElementById('lapsPerMile').value);
-      const totalLaps = 3 * lapsPerMile;
-      const duration = goal * 60 * 1000; // total time in ms
-      const start = Date.now();
+    function updatePacerPosition(elapsed) {
+      const goalTime = parseFloat(goalInput.value) || 45;
+      const lapsPerMile = parseFloat(lapsInput.value) || 4;
+      const lapSeconds = (goalTime * 60) / (lapsPerMile * 3);
+      const angle = ((elapsed % lapSeconds) / lapSeconds) * 360;
+      const rad = angle * (Math.PI / 180);
+      const centerX = 150, centerY = 150, radius = 80;
+      const x = centerX + radius * Math.cos(rad);
+      const y = centerY + radius * Math.sin(rad);
+      pacer.style.left = `${x}px`;
+      pacer.style.top = `${y}px`;
+    }
 
-      function frame() {
-        const elapsed = Date.now() - start;
-        const percent = elapsed / duration;
-        const angle = (percent * 360 * totalLaps) % 360;
-        const rad = angle * (Math.PI / 180);
-        const radiusX = 180;
-        const radiusY = 90;
-        const centerX = 0.45 * window.innerWidth;
-        const centerY = 0.35 * window.innerHeight;
-        const x = centerX + radiusX * Math.cos(rad);
-        const y = centerY + radiusY * Math.sin(rad);
-        pacer.style.left = x + 'px';
-        pacer.style.top = y + 'px';
-        requestAnimationFrame(frame);
+    function startTimer() {
+      startTime = Date.now();
+      interval = setInterval(() => {
+        const now = Date.now();
+        const elapsedSec = Math.floor((now - startTime) / 1000);
+        const min = Math.floor(elapsedSec / 60);
+        const sec = elapsedSec % 60;
+        timerDisplay.textContent = `Time: ${min}:${sec.toString().padStart(2, '0')}`;
+
+        if (userSpeed > 0) {
+          const mph = (userSpeed * 3600) / 1609.34;
+          const minPerLap = lapLength / (userSpeed / 1609.34 / 60);
+          paceDisplay.textContent = `Pace: ${mph.toFixed(1)} mph | ${minPerLap.toFixed(1)} min/lap`;
+
+          const remaining = 3 - userDistance;
+          const est = userSpeed > 0 ? (remaining / userSpeed * 60) : 0;
+          estDisplay.textContent = `Est Finish: ${est > 50 ? '>50' : est.toFixed(1)} min`;
+        }
+
+        centerDisplay.textContent = `Distance: ${userDistance.toFixed(2)} mi`;
+        progressBar.style.width = `${(userDistance / 3) * 100}%`;
+        lapDisplay.textContent = `Laps: ${Math.floor(userDistance / lapLength)}`;
+
+        updatePacerPosition(elapsedSec);
+        updateWalkerPosition();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(interval);
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (interval) {
+        stopTimer();
+        interval = null;
+        startBtn.textContent = "Start";
+      } else {
+        startTimer();
+        startBtn.textContent = "Stop";
       }
-      frame();
+    });
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          if (lastCoords) {
+            const d = haversine(lastCoords.lat, lastCoords.lon, latitude, longitude);
+            userDistance += d;
+            userSpeed = d * 3600;
+          }
+          lastCoords = { lat: latitude, lon: longitude };
+        },
+        (err) => console.error(err),
+        { enableHighAccuracy: true }
+      );
     }
 
-    function calcDistance(lat1, lon1, lat2, lon2) {
-      const R = 3958.8; // Radius of the Earth in miles
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 3958.8;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    }
-
-    function showError(error) {
-      alert('GPS Error: ' + error.message);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) *
+                Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.asin(Math.sqrt(a));
     }
   </script>
 </body>
