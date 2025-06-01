@@ -11,17 +11,16 @@ let pacerInterval;
 
 const timeDisplay = document.getElementById("time");
 const paceDisplay = document.getElementById("pace");
-const lapDisplay = document.getElementById("laps");
 const distLabel = document.getElementById("distance-label");
 const distFill = document.getElementById("distance-bar-fill");
 const lapLabel = document.getElementById("lap-label");
 const lapFill = document.getElementById("lap-bar-fill");
-const estimateText = document.getElementById("estimate-text");
 const modeSelector = document.getElementById("modeSelector");
 const mapDiv = document.getElementById("map");
 const trackDiv = document.getElementById("track");
 const lapsPerMileInput = document.getElementById("lapsPerMile");
 const lapsPerMileContainer = document.getElementById("lapsPerMileContainer");
+const trackEstimateText = document.getElementById("trackEstimateText");
 
 modeSelector.addEventListener("change", () => {
   const mode = modeSelector.value;
@@ -71,7 +70,6 @@ function startTimer() {
     const minutes = Math.floor(elapsed / 60);
     const seconds = elapsed % 60;
     timeDisplay.textContent = `${pad(minutes)}:${pad(seconds)}`;
-    updateEstimate();
   }, 1000);
 }
 
@@ -115,10 +113,9 @@ function startTracking() {
         if (laps > lapCount) lapCount = laps;
 
         distLabel.textContent = `${miles.toFixed(2)} / 3.00 miles`;
-        lapLabel.textContent = `${lapCount} / ${totalLaps}`;
+        lapLabel.textContent = `${laps} / ${totalLaps}`;
         distFill.style.width = `${(miles / 3) * 100}%`;
-        lapFill.style.width = `${(lapCount / totalLaps) * 100}%`;
-        lapDisplay.textContent = `${lapCount}/${totalLaps}`;
+        lapFill.style.width = `${(laps / totalLaps) * 100}%`;
 
         const elapsedMin = (Date.now() - startTime) / 60000;
         const pace = miles > 0 ? elapsedMin / miles : 0;
@@ -133,21 +130,6 @@ function startTracking() {
     },
     { enableHighAccuracy: true, maximumAge: 1000 }
   );
-}
-
-function updateEstimate() {
-  const miles = totalDistance / 1609.34;
-  const elapsed = (Date.now() - startTime) / 60000;
-  const pace = miles > 0 ? elapsed / miles : 0;
-  const estTime = pace * 3;
-
-  if (estTime > 0) {
-    const estMin = Math.floor(estTime);
-    const estSec = Math.floor((estTime % 1) * 60);
-    estimateText.textContent = `${pad(estMin)}:${pad(estSec)}`;
-  } else {
-    estimateText.textContent = "--:--";
-  }
 }
 
 function getDistance(c1, c2) {
@@ -190,7 +172,6 @@ function startTrackAnimation() {
     const lapsPerMile = parseFloat(lapsPerMileInput.value) || 4;
 
     const lapDistanceMiles = 1 / lapsPerMile;
-    const lapDistanceMeters = lapDistanceMiles * 1609.34;
     const totalLaps = lapsPerMile * 3;
     const userMiles = totalDistance / 1609.34;
 
@@ -204,11 +185,17 @@ function startTrackAnimation() {
     const pacerAngle = 360 - (pacerLapProgress * 360);
 
     lapLabel.textContent = `${userLaps} / ${totalLaps}`;
-    lapDisplay.textContent = `${userLaps}/${totalLaps}`;
     lapFill.style.width = `${(userLaps / totalLaps) * 100}%`;
 
     moveDot("pacerDot", pacerAngle);
     moveWalkerIcon("walkerIcon", userAngle);
+
+    // Update estimate in center of oval
+    const pace = userMiles > 0 ? (elapsedSec / 60) / userMiles : 0;
+    const estTime = pace * 3;
+    const estMin = Math.floor(estTime);
+    const estSec = Math.floor((estTime % 1) * 60);
+    trackEstimateText.textContent = isNaN(estMin) ? "--:--" : `${pad(estMin)}:${pad(estSec)}`;
   }, 1000);
 }
 
