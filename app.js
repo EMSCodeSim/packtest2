@@ -68,3 +68,25 @@ function startOrStop() {
 function switchToRoadMode() {
   alert("Road Mode coming soon.");
 }
+
+function displayGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById("gpsDisplay").textContent = "GPS not supported";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(5);
+      const lng = pos.coords.longitude.toFixed(5);
+      document.getElementById("gpsDisplay").textContent = `GPS: ${lat}, ${lng}`;
+    },
+    (err) => {
+      document.getElementById("gpsDisplay").textContent = "GPS error";
+      console.error("GPS error:", err);
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+displayGPS();
