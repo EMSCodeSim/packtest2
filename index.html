@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Pack Test</title>
+  <title>Pack Test - Choose Mode</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -9,36 +9,69 @@
       color: white;
       font-family: sans-serif;
       text-align: center;
-      padding: 50px 20px;
+      padding: 40px 20px;
     }
+
     h1 {
-      font-size: 28px;
+      font-size: 26px;
+      margin-bottom: 20px;
     }
-    button {
-      padding: 15px 30px;
-      font-size: 18px;
+
+    input {
+      width: 60px;
+      padding: 6px;
+      text-align: center;
+      font-size: 16px;
+      margin: 5px;
+      border-radius: 6px;
       border: none;
-      border-radius: 8px;
-      margin: 15px;
+    }
+
+    label {
+      font-size: 14px;
+      display: block;
+      margin-top: 12px;
+    }
+
+    button {
+      padding: 14px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
       background: #2196f3;
       color: white;
       width: 90%;
       max-width: 300px;
+      margin: 16px 0;
     }
-    p {
-      font-size: 14px;
-      color: #bbb;
-      margin-bottom: 10px;
+
+    .input-section {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <h1>Choose Your Pack Test Mode</h1>
 
-  <p>🏟️ Best for oval tracks (e.g., high school track)</p>
-  <button onclick="location.href='track.html'">Track Mode</button>
+  <div class="input-section">
+    <label for="laps">Laps per mile</label>
+    <input id="laps" type="number" value="4" min="1" max="10" />
 
-  <p>🛣️ Best for linear road tests (e.g., long walking path)</p>
-  <button onclick="location.href='road.html'">Road Mode</button>
+    <label for="time">Goal Time (min)</label>
+    <input id="time" type="number" value="45" min="1" max="240" />
+  </div>
+
+  <button onclick="saveAndGo('track.html')">🏟️ Track Mode</button>
+  <button onclick="saveAndGo('road.html')">🛣️ Road Mode</button>
+
+  <script>
+    function saveAndGo(target) {
+      const laps = document.getElementById('laps').value;
+      const time = document.getElementById('time').value;
+      localStorage.setItem('lapsPerMile', laps);
+      localStorage.setItem('goalTime', time);
+      location.href = target;
+    }
+  </script>
 </body>
 </html>
