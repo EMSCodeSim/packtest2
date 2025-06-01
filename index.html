@@ -22,23 +22,22 @@
       </select>
     </div>
 
-    <!-- Goal Time Input -->
-    <div class="text-center">
-      <label for="goalTime" class="block text-md font-medium mb-1">🎯 Goal Time (min)</label>
-      <input type="number" id="goalTime" value="45" min="1" class="p-2 text-center w-24 border rounded shadow">
+    <!-- Goal Time + Laps Per Mile Inputs -->
+    <div class="flex justify-center items-center gap-4 mt-2">
+      <div class="text-center">
+        <label for="goalTime" class="block text-md font-medium mb-1">🎯 Goal Time (min)</label>
+        <input type="number" id="goalTime" value="45" min="1" class="p-2 text-center w-24 border rounded shadow">
+      </div>
+      <div id="lapsPerMileContainer" class="text-center hidden">
+        <label for="lapsPerMile" class="block text-md font-medium mb-1">🔁 Laps/Mile</label>
+        <input type="number" id="lapsPerMile" value="12" min="1" class="p-2 text-center w-24 border rounded shadow">
+      </div>
     </div>
 
-    <!-- Laps Per Mile Input (Track Mode Only) -->
-    <div id="lapsPerMileContainer" class="text-center hidden">
-      <label for="lapsPerMile" class="block text-md font-medium mb-1">🔁 Laps per Mile</label>
-      <input type="number" id="lapsPerMile" value="12" min="1" class="p-2 text-center w-24 border rounded shadow">
-    </div>
-
-    <!-- Stats Display -->
-    <div class="grid grid-cols-3 gap-2 text-center text-sm font-semibold">
+    <!-- Stats Display (No Laps Box) -->
+    <div class="grid grid-cols-2 gap-2 text-center text-sm font-semibold">
       <div class="bg-white p-3 rounded shadow">⏱ Time<br><span id="time">00:00</span></div>
       <div class="bg-white p-3 rounded shadow">🏁 Pace<br><span id="pace">--</span></div>
-      <div class="bg-white p-3 rounded shadow">🔁 Laps<br><span id="laps">0</span>/12</div>
     </div>
 
     <!-- Progress Bars -->
@@ -57,25 +56,22 @@
       </div>
     </div>
 
-    <!-- Estimated Finish -->
-    <div class="text-center bg-white py-2 rounded shadow text-sm text-gray-800">
-      Est. Finish: <span id="estimate-text">--:--</span>
-    </div>
-
     <!-- Map (GPS Mode) -->
     <div id="map" class="h-64 rounded shadow border"></div>
 
     <!-- Track (Track Mode) -->
-    <div id="track" class="h-64 rounded shadow border hidden bg-white flex items-center justify-center">
+    <div id="track" class="h-64 rounded shadow border hidden bg-white flex items-center justify-center relative">
       <svg id="trackSVG" viewBox="0 0 200 100" class="w-full h-full">
         <ellipse cx="100" cy="50" rx="90" ry="40" stroke="#4F46E5" stroke-width="3" fill="none" />
         <circle id="pacerDot" r="6" fill="#10B981" />
         <text id="walkerIcon" font-size="12" text-anchor="middle" dominant-baseline="middle">🚶</text>
       </svg>
+      <!-- Est. Finish Time in Center -->
+      <div id="trackEstimateText" class="absolute text-2xl font-bold text-gray-800 text-center">--:--</div>
     </div>
 
     <!-- Controls -->
-    <div class="flex justify-center gap-4">
+    <div class="flex justify-center gap-4 mt-2">
       <button id="startBtn" class="bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-xl shadow text-lg w-1/2">Start</button>
       <button id="stopBtn" disabled class="bg-gray-400 text-white py-3 px-6 rounded-xl shadow text-lg w-1/2">Stop</button>
     </div>
