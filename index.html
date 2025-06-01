@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pack Test Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
 <body class="bg-gradient-to-tr from-gray-100 to-teal-200 text-gray-900 font-sans min-h-screen">
 
@@ -34,39 +34,36 @@
       </div>
     </div>
 
-    <!-- Stats Display (No Laps Box) -->
+    <!-- Stats Display -->
     <div class="grid grid-cols-2 gap-2 text-center text-sm font-semibold">
       <div class="bg-white p-3 rounded shadow">⏱ Time<br><span id="time">00:00</span></div>
       <div class="bg-white p-3 rounded shadow">🏁 Pace<br><span id="pace">--</span></div>
     </div>
 
-    <!-- Progress Bars -->
-    <div class="space-y-2">
-      <div>
-        <div class="text-xs font-medium">Distance: <span id="distance-label">0.00 / 3.00 mi</span></div>
-        <div class="w-full bg-gray-300 h-4 rounded-full">
-          <div id="distance-bar-fill" class="h-full bg-teal-600 rounded-full transition-all w-0%"></div>
-        </div>
+    <!-- Distance Progress -->
+    <div>
+      <div class="text-xs font-medium">Distance: <span id="distance-label">0.00 / 3.00 mi</span></div>
+      <div class="w-full bg-gray-300 h-4 rounded-full">
+        <div id="distance-bar-fill" class="h-full bg-teal-600 rounded-full transition-all w-0%"></div>
       </div>
-      <div>
-        <div class="text-xs font-medium">Laps: <span id="lap-label">0 / 12</span></div>
-        <div class="w-full bg-gray-300 h-4 rounded-full">
-          <div id="lap-bar-fill" class="h-full bg-indigo-600 rounded-full transition-all w-0%"></div>
-        </div>
-      </div>
+    </div>
+
+    <!-- GPS Mode Road Progress Bar -->
+    <div id="gps-progress-container" class="relative hidden h-10 mt-3 bg-gray-200 rounded-full overflow-hidden">
+      <div id="gps-pacer-dot" class="absolute top-1 left-0 w-6 h-6 bg-green-500 rounded-full z-10"></div>
+      <div id="gps-user-icon" class="absolute top-1 left-0 w-6 h-6 text-xl z-20">🚶</div>
     </div>
 
     <!-- Map (GPS Mode) -->
     <div id="map" class="h-64 rounded shadow border"></div>
 
-    <!-- Track (Track Mode) -->
+    <!-- Track Mode -->
     <div id="track" class="h-64 rounded shadow border hidden bg-white flex items-center justify-center relative">
       <svg id="trackSVG" viewBox="0 0 200 100" class="w-full h-full">
         <ellipse cx="100" cy="50" rx="90" ry="40" stroke="#4F46E5" stroke-width="3" fill="none" />
         <circle id="pacerDot" r="6" fill="#10B981" />
         <text id="walkerIcon" font-size="12" text-anchor="middle" dominant-baseline="middle">🚶</text>
       </svg>
-      <!-- Est. Finish Time in Center -->
       <div id="trackEstimateText" class="absolute text-2xl font-bold text-gray-800 text-center">--:--</div>
     </div>
 
