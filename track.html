@@ -103,8 +103,8 @@
         <label>⏱️ <input type="number" id="goalTime"> min</label><br>
         <button onclick="toggleRoad()">Road Mode</button>
         <button onclick="startStop()">Start</button>
-        <div id="lapCount">Lap: 0 / 12</div>
-        <div id="stats">Time: 0:00 | Pace: 0.00 min/mile</div>
+        <div id="lapCount">Lap: 0</div>
+        <div id="stats">Speed: 0.00 mph | Laps/min: 0.00</div>
         <div id="distanceCenter">Distance: 0.00 mi</div>
         <div id="estFinishTime">Est. Finish: 0:00</div>
       </div>
@@ -118,6 +118,7 @@
     let startTime, watchId;
     let distance = 0;
     let lastCoords = null;
+    let laps = 0;
 
     function toggleRoad() {
       window.location.href = "road.html";
@@ -127,6 +128,8 @@
       if (!isRunning) {
         isRunning = true;
         startTime = Date.now();
+        distance = 0;
+        laps = 0;
         watchId = navigator.geolocation.watchPosition(updatePosition, err => console.error(err), {
           enableHighAccuracy: true
         });
@@ -154,10 +157,15 @@
       const minutes = Math.floor(elapsed / 60);
       const seconds = Math.floor(elapsed % 60);
 
-      const pace = distance > 0 ? (elapsed / 60) / distance : 0;
-      const estFinish = pace > 0 ? (3 - distance) * pace : 0;
+      const speed = distance > 0 ? distance / (elapsed / 3600) : 0; // mph
+      const lapsPerMile = parseFloat(document.getElementById("lapsPerMile").value);
+      const lapLength = 1 / lapsPerMile;
+      laps = Math.floor(distance / lapLength);
+      const lapsPerMin = elapsed > 0 ? (distance / lapLength) / (elapsed / 60) : 0;
+      const estFinish = speed > 0 ? (3 - distance) / speed * 60 : 0;
 
-      document.getElementById('stats').textContent = `Time: ${minutes}:${seconds < 10 ? '0' : ''}${seconds} | Pace: ${pace.toFixed(2)} min/mile`;
+      document.getElementById('stats').textContent = `Speed: ${speed.toFixed(2)} mph | Laps/min: ${lapsPerMin.toFixed(2)}`;
+      document.getElementById('lapCount').textContent = `Lap: ${laps}`;
       document.getElementById('distanceCenter').textContent = `Distance: ${distance.toFixed(2)} mi`;
       document.getElementById('estFinishTime').textContent = `Est. Finish: ${Math.floor(estFinish)}:${Math.floor((estFinish % 1) * 60).toString().padStart(2, '0')}`;
       document.getElementById('progressFill').style.width = `${Math.min(distance / 3 * 100, 100)}%`;
