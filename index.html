@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pack Test Tracker</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
       background: #111;
       color: white;
       font-family: 'Segoe UI', sans-serif;
@@ -15,17 +17,17 @@
     .container {
       display: flex;
       flex-direction: row;
-      height: 100vh;
-      padding: 10px;
+      height: 100%;
       box-sizing: border-box;
+      padding: 10px;
     }
 
     .track-area {
       position: relative;
-      flex: 1;
+      width: 100px;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
     }
 
     .track-outer {
@@ -53,7 +55,7 @@
       position: absolute;
       width: 24px;
       height: 24px;
-      left: 50%;
+      left: 40%;
       transform: translateX(-50%);
     }
 
@@ -65,6 +67,7 @@
 
     .walker {
       font-size: 22px;
+      left: 60%;
       z-index: 3;
     }
 
@@ -80,10 +83,6 @@
       font-size: 18px;
       font-weight: bold;
       margin-bottom: 10px;
-    }
-
-    .input-block {
-      margin-top: 10px;
     }
 
     .input-block input, .input-block button {
@@ -104,7 +103,47 @@
     .progress-bar {
       height: 10px;
       width: 90%;
-      margin: 10px auto 0;
+      margin: 12px auto;
       background: #444;
       border-radius: 5px;
-      overflow:
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: lime;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="track-area">
+    <div class="track-outer" id="trackOuter">
+      <div class="track-inner"></div>
+      <div id="pacerDot" class="dot"></div>
+      <div id="walkerIcon" class="walker">🚶‍♂️</div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="stat-block" id="lapText">Lap 0/12</div>
+    <div class="stat-block" id="timeText">Time: 00:00</div>
+    <div class="stat-block" id="paceText">Pace: --</div>
+    <div class="stat-block" id="estText">Est: --:--</div>
+
+    <div class="input-block">
+      <input type="number" id="lapsPerMile" placeholder="Laps Per Mile" value="4" />
+      <input type="number" id="goalTime" placeholder="Goal Time (minutes)" value="45" />
+      <button onclick="startOrStop()">Start</button>
+      <button onclick="switchToRoadMode()">Road Mode</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="distanceFill"></div></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
