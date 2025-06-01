@@ -1,6 +1,7 @@
+let isRunning = false;
+let startTime;
 let lapCount = 0;
 let lapGoal = 12;
-let startTime;
 let timer;
 let pace = 0;
 
@@ -10,54 +11,60 @@ function formatTime(secs) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function startTrack(goalMinutes = 45) {
-  startTime = Date.now();
-  timer = setInterval(() => updateStats(goalMinutes), 1000);
-  animateDots(goalMinutes);
-}
-
-function stopTest() {
-  clearInterval(timer);
-  alert("Test Ended");
-  location.reload();
-}
-
-function updateStats(goalMinutes) {
-  const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
-  document.getElementById("timeText").textContent = `Time: ${formatTime(elapsedSec)}`;
-
-  const miles = lapCount / 4; // 4 laps/mile
-  pace = miles > 0 ? (elapsedSec / 60) / miles : 0;
-  document.getElementById("paceText").textContent = `Pace: ${pace ? pace.toFixed(2) : "--"}`;
-
-  const estTime = pace > 0 ? pace * 3 : 0;
-  document.getElementById("estText").textContent = `Est: ${pace ? formatTime(Math.round(estTime * 60)) : "--:--"}`;
+function updateStats() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const miles = lapCount / (parseInt(document.getElementById("lapsPerMile").value) || 4);
+  pace = miles > 0 ? (elapsed / 60) / miles : 0;
 
   document.getElementById("lapText").textContent = `Lap ${lapCount}/${lapGoal}`;
-  document.getElementById("distanceFill").style.width = `${(lapCount / lapGoal) * 100}%`;
+  document.getElementById("timeText").textContent = `Time: ${formatTime(elapsed)}`;
+  document.getElementById("paceText").textContent = `Pace: ${pace ? pace.toFixed(2) : "--"}`;
+  document.getElementById("estText").textContent = `Est: ${pace ? formatTime(Math.round(pace * 3 * 60)) : "--:--"}`;
+
+  const fill = Math.min((lapCount / lapGoal) * 100, 100);
+  document.getElementById("distanceFill").style.width = `${fill}%`;
 }
 
-function animateDots(goalMinutes) {
-  const trackHeight = document.getElementById("trackContainer").offsetHeight - 40;
-  let angle = 0;
+function animateDots(goalMin, lapsPerMile) {
+  const track = document.getElementById("trackOuter");
+  const trackHeight = track.clientHeight - 40;
 
-  function frame() {
+  function move() {
+    if (!isRunning) return;
+
     const elapsed = (Date.now() - startTime) / 1000;
-    const percent = (elapsed / (goalMinutes * 60)) % 1;
+    const progress = (elapsed / (goalMin * 60)) % 1;
+    const y = progress * trackHeight;
 
-    const y = percent * trackHeight;
     document.getElementById("pacerDot").style.top = `${y}px`;
     document.getElementById("walkerIcon").style.top = `${y}px`;
 
-    if (percent >= 0.99) lapCount++;
-    requestAnimationFrame(frame);
+    if (progress >= 0.99) lapCount++;
+
+    requestAnimationFrame(move);
   }
-  requestAnimationFrame(frame);
+
+  requestAnimationFrame(move);
+}
+
+function startOrStop() {
+  isRunning = !isRunning;
+  if (isRunning) {
+    lapCount = 0;
+    startTime = Date.now();
+    const goalTime = parseInt(document.getElementById("goalTime").value) || 45;
+    const lapsPerMile = parseInt(document.getElementById("lapsPerMile").value) || 4;
+    lapGoal = lapsPerMile * 3;
+    timer = setInterval(updateStats, 1000);
+    animateDots(goalTime, lapsPerMile);
+    document.querySelector("button[onclick='startOrStop()']").textContent = "Stop";
+  } else {
+    clearInterval(timer);
+    alert("Test Ended");
+    location.reload();
+  }
 }
 
 function switchToRoadMode() {
-  alert("Road Mode coming soon.");
+  alert("Road Mode not yet implemented.");
 }
-
-// Start automatically for demo/testing
-startTrack(45);
