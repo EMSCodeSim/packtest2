@@ -4,78 +4,138 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pack Test Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      background: #f0f4f8;
+    }
+    .container {
+      padding: 10px;
+    }
+    select, input {
+      padding: 8px;
+      font-size: 16px;
+      margin: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 5px;
+      border-radius: 10px;
+    }
+    #map {
+      height: 250px;
+    }
+    .hidden {
+      display: none;
+    }
+    #gps-progress-container {
+      position: relative;
+      height: 40px;
+      background: #ddd;
+      margin: 10px auto;
+      width: 90%;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    #gps-pacer-dot, #gps-user-icon {
+      position: absolute;
+      top: 10px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      z-index: 2;
+    }
+    #gps-pacer-dot {
+      background: green;
+    }
+    #gps-user-icon {
+      background: url('https://cdn-icons-png.flaticon.com/512/684/684908.png') no-repeat center;
+      background-size: contain;
+    }
+    #trackSVG {
+      width: 100%;
+      height: 200px;
+    }
+    #trackEstimateText {
+      font-size: 22px;
+      font-weight: bold;
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    #lapCounter {
+      margin-top: 5px;
+      font-size: 18px;
+    }
+    #roadEstimateText {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 1;
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-tr from-gray-100 to-teal-200 text-gray-900 font-sans min-h-screen">
+<body>
+  <div class="container">
+    <h2>Pack Test Tracker</h2>
 
-  <div class="max-w-md mx-auto p-4 space-y-5">
+    <select id="modeSelector">
+      <option value="track" selected>Track Mode</option>
+      <option value="gps">Road Mode</option>
+    </select>
 
-    <h1 class="text-4xl font-bold text-center text-teal-700">🏃‍♂️ Pack Test Tracker</h1>
+    <input type="number" id="goalTime" placeholder="Goal Time (min)" value="45"/>
+    <span id="lapsPerMileContainer">
+      <input type="number" id="lapsPerMile" placeholder="Laps/Mile" value="4"/>
+    </span>
 
-    <!-- Mode Selector -->
-    <div class="text-center">
-      <label for="modeSelector" class="font-semibold text-lg mr-2">Mode:</label>
-      <select id="modeSelector" class="p-2 rounded border bg-white shadow-md">
-        <option value="gps">GPS Mode</option>
-        <option value="track">Track Mode</option>
-      </select>
-    </div>
-
-    <!-- Goal Time + Laps Per Mile Inputs -->
-    <div class="flex justify-center items-center gap-4 mt-2">
-      <div class="text-center">
-        <label for="goalTime" class="block text-md font-medium mb-1">🎯 Goal Time (min)</label>
-        <input type="number" id="goalTime" value="45" min="1" class="p-2 text-center w-24 border rounded shadow">
-      </div>
-      <div id="lapsPerMileContainer" class="text-center hidden">
-        <label for="lapsPerMile" class="block text-md font-medium mb-1">🔁 Laps/Mile</label>
-        <input type="number" id="lapsPerMile" value="12" min="1" class="p-2 text-center w-24 border rounded shadow">
-      </div>
-    </div>
-
-    <!-- Stats Display -->
-    <div class="grid grid-cols-2 gap-2 text-center text-sm font-semibold">
-      <div class="bg-white p-3 rounded shadow">⏱ Time<br><span id="time">00:00</span></div>
-      <div class="bg-white p-3 rounded shadow">🏁 Pace<br><span id="pace">--</span></div>
-    </div>
-
-    <!-- Distance Progress -->
     <div>
-      <div class="text-xs font-medium">Distance: <span id="distance-label">0.00 / 3.00 mi</span></div>
-      <div class="w-full bg-gray-300 h-4 rounded-full">
-        <div id="distance-bar-fill" class="h-full bg-teal-600 rounded-full transition-all w-0%"></div>
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+    </div>
+
+    <div id="track" class="">
+      <svg id="trackSVG" viewBox="0 0 300 200">
+        <ellipse cx="150" cy="100" rx="100" ry="70" stroke="gray" stroke-width="3" fill="none"/>
+        <circle id="pacerDot" r="6" fill="green"/>
+        <text id="walkerIcon" font-size="18">🚶‍♂️</text>
+        <text id="trackEstimateText"></text>
+      </svg>
+      <div id="lapCounter">Lap 0 of 12</div>
+    </div>
+
+    <div id="map" class="hidden"></div>
+
+    <div id="gps-progress-container" class="hidden">
+      <div id="roadEstimateText">--:--</div>
+      <div id="gps-pacer-dot"></div>
+      <div id="gps-user-icon"></div>
+    </div>
+
+    <div>
+      <h3>Time: <span id="time">00:00</span></h3>
+      <h3>Pace: <span id="pace">--</span> min/mile</h3>
+    </div>
+
+    <div style="margin-top: 10px;">
+      <label id="distance-label">0.00 / 3.00 miles</label>
+      <div style="width: 90%; height: 20px; background: #ccc; margin: auto; border-radius: 10px;">
+        <div id="distance-bar-fill" style="height: 100%; width: 0%; background: #4caf50; border-radius: 10px;"></div>
       </div>
     </div>
-
-    <!-- GPS Mode Road Progress Bar -->
-    <div id="gps-progress-container" class="relative hidden h-10 mt-3 bg-gray-200 rounded-full overflow-hidden">
-      <div id="gps-pacer-dot" class="absolute top-1 left-0 w-6 h-6 bg-green-500 rounded-full z-10"></div>
-      <div id="gps-user-icon" class="absolute top-1 left-0 w-6 h-6 text-xl z-20">🚶</div>
-    </div>
-
-    <!-- Map (GPS Mode) -->
-    <div id="map" class="h-64 rounded shadow border"></div>
-
-    <!-- Track Mode -->
-    <div id="track" class="h-64 rounded shadow border hidden bg-white flex items-center justify-center relative">
-      <svg id="trackSVG" viewBox="0 0 200 100" class="w-full h-full">
-        <ellipse cx="100" cy="50" rx="90" ry="40" stroke="#4F46E5" stroke-width="3" fill="none" />
-        <circle id="pacerDot" r="6" fill="#10B981" />
-        <text id="walkerIcon" font-size="12" text-anchor="middle" dominant-baseline="middle">🚶</text>
-      </svg>
-      <div id="trackEstimateText" class="absolute text-2xl font-bold text-gray-800 text-center">--:--</div>
-    </div>
-
-    <!-- Controls -->
-    <div class="flex justify-center gap-4 mt-2">
-      <button id="startBtn" class="bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-xl shadow text-lg w-1/2">Start</button>
-      <button id="stopBtn" disabled class="bg-gray-400 text-white py-3 px-6 rounded-xl shadow text-lg w-1/2">Stop</button>
-    </div>
-
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
