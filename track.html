@@ -40,7 +40,7 @@
 
     #trackInfo {
       position: absolute;
-      top: 30px;
+      top: 40px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -90,9 +90,9 @@
         <label>🚶 <input type="number" id="lapsPerMile"> laps/mile</label><br>
         <label>⏱️ <input type="number" id="goalTime"> min</label><br>
         <button onclick="toggleRoad()">Road Mode</button>
-        <button onclick="startStop()">Start</button>
+        <button onclick="startStop()" id="startButton">Start</button>
         <div id="lapCount">Lap: 0 / 12</div>
-        <div id="stats">Time: 0 min | Pace: 0 min/mile | Est. Finish: 0 min</div>
+        <div id="stats">Time: 0:00 | Pace: 0 min/mile | Est. Finish: 0 min</div>
       </div>
     </div>
   </div>
@@ -101,8 +101,15 @@
 
   <script>
     let startTime, timerInterval;
-    let elapsedMinutes = 0;
+    let elapsedSeconds = 0;
+    let running = false;
     const statsDisplay = document.getElementById("stats");
+    const pacerDot = document.getElementById("pacerDot");
+    const walkerIcon = document.getElementById("walkerIcon");
+    const track = document.getElementById("track");
+
+    let pacerAngle = 0;
+    let walkerAngle = 0;
 
     window.onload = function () {
       document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
@@ -114,23 +121,47 @@
     }
 
     function startStop() {
-      if (!timerInterval) {
+      if (!running) {
         startTime = Date.now();
         timerInterval = setInterval(updateTimer, 1000);
+        running = true;
+        document.getElementById("startButton").innerText = "Stop";
+        animatePacer();
       } else {
         clearInterval(timerInterval);
-        timerInterval = null;
+        running = false;
+        document.getElementById("startButton").innerText = "Start";
       }
     }
 
     function updateTimer() {
       const now = Date.now();
-      elapsedMinutes = Math.floor((now - startTime) / 60000);
-      const lapsPerMile = parseFloat(document.getElementById("lapsPerMile").value);
-      const goalTime = parseFloat(document.getElementById("goalTime").value);
-      const pace = goalTime;
-      const estFinish = goalTime;
-      statsDisplay.innerText = `Time: ${elapsedMinutes} min | Pace: ${pace} min/mile | Est. Finish: ${estFinish} min`;
+      elapsedSeconds = Math.floor((now - startTime) / 1000);
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+      const pace = document.getElementById("goalTime").value;
+      statsDisplay.innerText = `Time: ${minutes}:${seconds.toString().padStart(2, '0')} | Pace: ${pace} min/mile | Est. Finish: ${pace} min`;
+    }
+
+    function animatePacer() {
+      if (!running) return;
+      pacerAngle = (pacerAngle + 0.5) % 360;
+      walkerAngle = (walkerAngle + 0.35) % 360;
+      moveDot(pacerDot, pacerAngle);
+      moveDot(walkerIcon, walkerAngle);
+      requestAnimationFrame(animatePacer);
+    }
+
+    function moveDot(dot, angle) {
+      const radiusX = track.offsetWidth / 2 - 10;
+      const radiusY = track.offsetHeight / 2 - 10;
+      const centerX = track.offsetWidth / 2;
+      const centerY = track.offsetHeight / 2;
+      const rad = angle * (Math.PI / 180);
+      const x = centerX - radiusX * Math.cos(rad);
+      const y = centerY - radiusY * Math.sin(rad);
+      dot.style.left = x + 'px';
+      dot.style.top = y + 'px';
     }
   </script>
 </body>
