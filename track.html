@@ -38,30 +38,32 @@
     .dot { background: lime; }
     .walker { background: yellow; }
 
-    #controls {
+    #trackInfo {
       position: absolute;
       top: 10px;
-      right: 10px;
-      text-align: right;
-    }
-
-    #stats {
-      padding: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       text-align: center;
     }
 
-    input {
+    #trackInfo input {
       width: 40px;
       font-size: 14px;
       padding: 2px 4px;
       margin: 4px;
       text-align: center;
     }
-    button {
+    #trackInfo button {
       padding: 8px 16px;
       font-size: 16px;
       margin-top: 10px;
       margin-right: 5px;
+    }
+
+    #lapCount {
+      text-align: center;
+      margin-top: 5px;
+      font-size: 18px;
     }
 
     #progressBar {
@@ -77,33 +79,25 @@
       background: lime;
       width: 0%;
     }
-
-    #lapCount {
-      text-align: center;
-      margin-top: 5px;
-      font-size: 18px;
-    }
   </style>
 </head>
 <body>
-  <div id="controls">
-    <label>🚶 <input type="number" id="lapsPerMile"> laps/mile</label><br>
-    <label>⏱️ <input type="number" id="goalTime"> min</label>
-    <br>
-    <button onclick="toggleRoad()">Road Mode</button>
-    <button onclick="startStop()">Start</button>
-  </div>
-
   <div id="trackContainer">
     <div id="track">
       <div class="dot" id="pacerDot"></div>
       <div class="walker" id="walkerIcon"></div>
+      <div id="trackInfo">
+        <label>🚶 <input type="number" id="lapsPerMile"> laps/mile</label><br>
+        <label>⏱️ <input type="number" id="goalTime"> min</label><br>
+        <button onclick="toggleRoad()">Road Mode</button>
+        <button onclick="startStop()">Start</button>
+        <div id="lapCount">Lap: 0 / 12</div>
+        <div id="stats">Time: 0 | Pace: 0 | Est. Finish: 0</div>
+      </div>
     </div>
   </div>
 
-  <div id="lapCount">Lap: 0 / 12</div>
   <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-  <div id="stats">Time: 0 | Pace: 0 | Est. Finish: 0</div>
 
   <script>
     window.onload = function () {
