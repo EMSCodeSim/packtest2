@@ -1,77 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Pack Test - Choose Mode</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Road Mode Pack Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background: #111;
-      color: white;
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
+      background: #eef;
+      margin: 0;
+      padding: 0;
       text-align: center;
-      padding: 40px 20px;
     }
 
-    h1 {
-      font-size: 26px;
-      margin-bottom: 20px;
+    .controls {
+      margin: 10px;
     }
 
-    input {
-      width: 60px;
-      padding: 6px;
-      text-align: center;
-      font-size: 16px;
+    input, button {
+      padding: 10px;
       margin: 5px;
-      border-radius: 6px;
-      border: none;
+      font-size: 1em;
     }
 
-    label {
-      font-size: 14px;
-      display: block;
-      margin-top: 12px;
+    #roadContainer {
+      position: relative;
+      width: 100%;
+      height: 70vh;
+      margin: 0 auto;
+      background: linear-gradient(to top, #bbb, #eee);
+      overflow: hidden;
     }
 
-    button {
-      padding: 14px 24px;
-      font-size: 16px;
-      border: none;
+    .roadLine {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 100%;
+      background: black;
+    }
+
+    .icon {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+    }
+
+    #stats {
+      margin-top: 10px;
+      font-size: 1.1em;
+    }
+
+    .progress-bar {
+      height: 20px;
+      background: #ccc;
+      margin: 10px;
       border-radius: 10px;
-      background: #2196f3;
-      color: white;
+      overflow: hidden;
       width: 90%;
-      max-width: 300px;
-      margin: 16px 0;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .input-section {
-      margin-top: 20px;
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #4caf50;
     }
   </style>
 </head>
 <body>
-  <h1>Choose Your Pack Test Mode</h1>
 
-  <div class="input-section">
-    <label for="laps">Laps per mile</label>
-    <input id="laps" type="number" value="4" min="1" max="10" />
-
-    <label for="time">Goal Time (min)</label>
-    <input id="time" type="number" value="45" min="1" max="240" />
+  <h2>Road Mode Pack Test</h2>
+  <div class="controls">
+    <label>Goal Time (min): <input type="number" id="goalTime" value="45"></label>
+    <button onclick="startRoadTest()">Start</button>
+    <button onclick="stopTest()">Stop</button>
   </div>
 
-  <button onclick="saveAndGo('track.html')">🏟️ Track Mode</button>
-  <button onclick="saveAndGo('road.html')">🛣️ Road Mode</button>
+  <div id="roadContainer">
+    <div class="roadLine"></div>
+    <div class="icon" id="pacerDot">●</div>
+    <div class="icon" id="userIcon">🚶‍♂️</div>
+  </div>
 
-  <script>
-    function saveAndGo(target) {
-      const laps = document.getElementById('laps').value;
-      const time = document.getElementById('time').value;
-      localStorage.setItem('lapsPerMile', laps);
-      localStorage.setItem('goalTime', time);
-      location.href = target;
-    }
-  </script>
+  <div id="stats">
+    <div id="timer">00:00</div>
+    <div id="pace">Pace: 0.00 mph</div>
+    <div id="estFinish">Est Finish: --</div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="distanceFill"></div>
+  </div>
+
+  <script src="road.js"></script>
 </body>
 </html>
