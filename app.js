@@ -1,25 +1,27 @@
 let watchId;
 let startTime;
 let totalDistance = 0;
-let lapCount = 0;
 let previousCoords = null;
 let timerInterval;
 let map, marker, pathLine;
 let pathCoords = [];
-let trackStartTime = null;
 let pacerInterval;
+let gpsPacerX = 0;
+let gpsUserX = 0;
+let gpsProgressWidth = 0;
 
 const timeDisplay = document.getElementById("time");
 const paceDisplay = document.getElementById("pace");
 const distLabel = document.getElementById("distance-label");
 const distFill = document.getElementById("distance-bar-fill");
-const lapLabel = document.getElementById("lap-label");
-const lapFill = document.getElementById("lap-bar-fill");
 const modeSelector = document.getElementById("modeSelector");
 const mapDiv = document.getElementById("map");
 const trackDiv = document.getElementById("track");
 const lapsPerMileInput = document.getElementById("lapsPerMile");
 const lapsPerMileContainer = document.getElementById("lapsPerMileContainer");
+const gpsProgress = document.getElementById("gps-progress-container");
+const gpsPacerDot = document.getElementById("gps-pacer-dot");
+const gpsUserIcon = document.getElementById("gps-user-icon");
 const trackEstimateText = document.getElementById("trackEstimateText");
 
 modeSelector.addEventListener("change", () => {
@@ -27,11 +29,13 @@ modeSelector.addEventListener("change", () => {
   if (mode === "gps") {
     mapDiv.classList.remove("hidden");
     trackDiv.classList.add("hidden");
+    gpsProgress.classList.remove("hidden");
     lapsPerMileContainer.classList.add("hidden");
     initializeMap();
   } else {
     mapDiv.classList.add("hidden");
     trackDiv.classList.remove("hidden");
+    gpsProgress.classList.add("hidden");
     lapsPerMileContainer.classList.remove("hidden");
   }
 });
@@ -39,7 +43,6 @@ modeSelector.addEventListener("change", () => {
 document.getElementById("startBtn").addEventListener("click", () => {
   startTime = Date.now();
   totalDistance = 0;
-  lapCount = 0;
   previousCoords = null;
   pathCoords = [];
   if (pathLine) pathLine.remove();
@@ -50,7 +53,7 @@ document.getElementById("startBtn").addEventListener("click", () => {
   startTimer();
 
   if (modeSelector.value === "gps") {
-    startTracking();
+    startGPSMode();
   } else {
     startTrackAnimation();
   }
@@ -77,7 +80,16 @@ function pad(num) {
   return num < 10 ? "0" + num : num;
 }
 
-function startTracking() {
+function startGPSMode() {
+  const goalTimeMin = parseFloat(document.getElementById("goalTime").value) || 45;
+  const goalPace = 3 / (goalTimeMin * 60); // 3 miles total goal
+  gpsProgressWidth = document.getElementById("gps-progress-container").offsetWidth;
+
+  gpsPacerX = 0;
+  gpsUserX = 0;
+  gpsPacerDot.style.left = "0px";
+  gpsUserIcon.style.left = "0px";
+
   if (!navigator.geolocation) {
     alert("Geolocation not supported.");
     return;
@@ -107,19 +119,17 @@ function startTracking() {
         totalDistance += dist;
 
         const miles = totalDistance / 1609.34;
-        const lapsPerMile = parseFloat(lapsPerMileInput.value) || 4;
-        const totalLaps = lapsPerMile * 3;
-        const laps = Math.floor(miles * lapsPerMile);
-        if (laps > lapCount) lapCount = laps;
-
         distLabel.textContent = `${miles.toFixed(2)} / 3.00 miles`;
-        lapLabel.textContent = `${laps} / ${totalLaps}`;
         distFill.style.width = `${(miles / 3) * 100}%`;
-        lapFill.style.width = `${(laps / totalLaps) * 100}%`;
 
         const elapsedMin = (Date.now() - startTime) / 60000;
         const pace = miles > 0 ? elapsedMin / miles : 0;
         paceDisplay.textContent = pace > 0 ? pace.toFixed(2) : "--";
+
+        // Move user icon across GPS progress bar
+        const progress = Math.min(1, miles / 3);
+        gpsUserX = progress * gpsProgressWidth;
+        gpsUserIcon.style.left = `${gpsUserX}px`;
       }
 
       previousCoords = current;
@@ -130,6 +140,16 @@ function startTracking() {
     },
     { enableHighAccuracy: true, maximumAge: 1000 }
   );
+
+  // Animate pacer
+  const goalSpeedPerSec = gpsProgressWidth / (goalTimeMin * 60);
+  gpsPacerX = 0;
+  clearInterval(pacerInterval);
+  pacerInterval = setInterval(() => {
+    gpsPacerX += goalSpeedPerSec;
+    if (gpsPacerX >= gpsProgressWidth) gpsPacerX = gpsProgressWidth;
+    gpsPacerDot.style.left = `${gpsPacerX}px`;
+  }, 1000);
 }
 
 function getDistance(c1, c2) {
@@ -162,35 +182,28 @@ function initializeMap() {
 }
 
 function startTrackAnimation() {
-  trackStartTime = Date.now();
+  const goalTimeMin = parseFloat(document.getElementById("goalTime").value) || 45;
+  const lapsPerMile = parseFloat(lapsPerMileInput.value) || 4;
+  const totalLaps = lapsPerMile * 3;
+  const lapDistanceMiles = 1 / lapsPerMile;
+  const trackStartTime = Date.now();
+
   clearInterval(pacerInterval);
-
   pacerInterval = setInterval(() => {
-    const now = Date.now();
-    const elapsedSec = (now - trackStartTime) / 1000;
-    const goalTimeMin = parseFloat(document.getElementById("goalTime").value) || 45;
-    const lapsPerMile = parseFloat(lapsPerMileInput.value) || 4;
-
-    const lapDistanceMiles = 1 / lapsPerMile;
-    const totalLaps = lapsPerMile * 3;
+    const elapsedSec = (Date.now() - trackStartTime) / 1000;
     const userMiles = totalDistance / 1609.34;
 
     const userLapProgress = (userMiles % lapDistanceMiles) / lapDistanceMiles;
     const userLaps = Math.floor(userMiles / lapDistanceMiles);
-
     const lapDurationSec = (goalTimeMin * 60) / totalLaps;
     const pacerLapProgress = (elapsedSec % lapDurationSec) / lapDurationSec;
 
     const userAngle = 360 - (userLapProgress * 360);
     const pacerAngle = 360 - (pacerLapProgress * 360);
 
-    lapLabel.textContent = `${userLaps} / ${totalLaps}`;
-    lapFill.style.width = `${(userLaps / totalLaps) * 100}%`;
-
     moveDot("pacerDot", pacerAngle);
     moveWalkerIcon("walkerIcon", userAngle);
 
-    // Update estimate in center of oval
     const pace = userMiles > 0 ? (elapsedSec / 60) / userMiles : 0;
     const estTime = pace * 3;
     const estMin = Math.floor(estTime);
