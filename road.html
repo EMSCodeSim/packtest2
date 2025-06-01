@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Road Mode</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .road-container {
+      position: relative;
+      width: 100%;
+      height: 90vh;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .road {
+      flex: 1;
+      position: relative;
+      background: #333;
+      margin: 10px;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .pacer, .walker {
+      position: absolute;
+      left: 40%;
+      width: 24px;
+      height: 24px;
+      transform: translateX(-50%);
+    }
+
+    .pacer {
+      background: limegreen;
+      border-radius: 50%;
+      z-index: 2;
+    }
+
+    .walker {
+      font-size: 22px;
+      left: 60%;
+      z-index: 3;
+    }
+
+    .markers {
+      width: 40px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .markers div {
+      font-size: 12px;
+    }
+
+    .bottom-panel {
+      text-align: center;
+      padding: 10px;
+    }
+
+    .input-group {
+      margin-bottom: 6px;
+    }
+
+    .input-group input {
+      width: 40px;
+      padding: 5px;
+      text-align: center;
+      margin-right: 4px;
+    }
+
+    button {
+      margin: 6px;
+      padding: 8px 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      background: #f44336;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<div class="road-container">
+  <div class="road" id="road">
+    <div id="pacerDot" class="pacer"></div>
+    <div id="walkerIcon" class="walker">🚶‍♂️</div>
+  </div>
+  <div class="markers">
+    <div>3 mi</div>
+    <div>2 mi</div>
+    <div>1 mi</div>
+    <div>0 mi</div>
+  </div>
+</div>
+
+<div class="bottom-panel">
+  <div class="input-group">
+    <input type="number" id="lapsPerMile" value="4" maxlength="2">
+    <label>laps/mile</label>
+  </div>
+  <div class="input-group">
+    <input type="number" id="goalTime" value="45" maxlength="2">
+    <label>min total</label>
+  </div>
+  <button onclick="startRoad()">Start</button>
+</div>
+
+<script>
+let roadStartTime;
+let roadAnimation;
+let isRunning = false;
+let totalDistance = 3; // miles
+
+function startRoad() {
+  if (isRunning) {
+    cancelAnimationFrame(roadAnimation);
+    isRunning = false;
+    return;
+  }
+
+  isRunning = true;
+  roadStartTime = Date.now();
+  const goalTime = parseFloat(document.getElementById("goalTime").value) || 45;
+  animatePacerUp(goalTime);
+  animateWalkerUp();
+}
+
+function animatePacerUp(goalMinutes) {
+  const road = document.getElementById("road");
+  const height = road.clientHeight;
+  const duration = goalMinutes * 60 * 1000; // ms
+
+  function step() {
+    const elapsed = Date.now() - roadStartTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const y = height - progress * height;
+    document.getElementById("pacerDot").style.top = `${y}px`;
+
+    if (progress < 1) {
+      roadAnimation = requestAnimationFrame(step);
+    }
+  }
+
+  roadAnimation = requestAnimationFrame(step);
+}
+
+function animateWalkerUp() {
+  // For now, walker mirrors pacer for testing
+  const road = document.getElementById("road");
+  const height = road.clientHeight;
+
+  let y = height;
+  function step() {
+    if (!isRunning) return;
+    y -= 0.5; // Simulated speed
+    if (y < 0) y = 0;
+    document.getElementById("walkerIcon").style.top = `${y}px`;
+    requestAnimationFrame(step);
+  }
+
+  step();
+}
+</script>
+</body>
+</html>
