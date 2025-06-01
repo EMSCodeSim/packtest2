@@ -1,212 +1,123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pack Test Tracker</title>
+  <title>Track Mode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      height: 100%;
+      font-family: sans-serif;
       background: #111;
       color: white;
-      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
     }
-
-    .container {
-      display: flex;
-      flex-direction: row;
-      height: 95%;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
-    .track-area {
-      flex: 2;
+    #trackContainer {
+      position: relative;
+      width: 100%;
+      height: 80vh;
       display: flex;
       justify-content: center;
       align-items: center;
     }
-
-    .track-outer {
-      height: 80vh;
-      width: 120px;
-      background: #222;
-      border-left: 6px solid gray;
-      border-right: 6px solid gray;
-      border-radius: 70px / 40px; /* scaled to resemble 400m oval */
+    #track {
       position: relative;
+      width: 90%;
+      aspect-ratio: 2/3;
+      border: 6px solid #ccc;
+      border-radius: 50% / 40%;
+      box-sizing: border-box;
+      background: #222;
     }
-
-    .track-inner {
-      position: absolute;
-      top: 10px;
-      left: 16px;
-      right: 16px;
-      bottom: 10px;
-      border-left: 2px solid #444;
-      border-right: 2px solid #444;
-      border-radius: 60px / 35px;
-    }
-
     .dot, .walker {
       position: absolute;
-      width: 24px;
-      height: 24px;
-      transform: translateX(-50%);
-    }
-
-    .dot {
-      background-color: lime;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      left: 40%;
-      z-index: 2;
+      transform: translate(-50%, -50%);
+    }
+    .dot { background: lime; }
+    .walker { background: yellow; }
+
+    #controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      text-align: right;
     }
 
-    .walker {
-      font-size: 22px;
-      left: 60%;
-      z-index: 3;
-    }
-
-    .right-panel {
-      flex: 1;
-      padding-left: 12px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .stat-block {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .input-block {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .input-group {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .input-group input {
-      width: 40px;
-      font-size: 16px;
-      padding: 5px;
-      border-radius: 4px;
-      border: none;
+    #stats {
+      padding: 10px;
       text-align: center;
     }
 
-    .input-group label {
+    input {
+      width: 40px;
       font-size: 14px;
-      margin-left: 5px;
+      padding: 2px 4px;
+      margin: 4px;
+      text-align: center;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      margin-top: 10px;
+      margin-right: 5px;
     }
 
-    .button-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-    }
-
-    .button-row button {
-      flex: 1;
-      padding: 8px;
-      font-size: 14px;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      background-color: #f44336;
-      color: white;
-    }
-
-    .progress-bar {
-      height: 14px;
+    #progressBar {
+      height: 10px;
+      background: #555;
       width: 100%;
-      margin-top: 8px;
-      background: #333;
-      border-radius: 5px;
+      margin-top: 6px;
       position: relative;
-      overflow: hidden;
     }
 
     .progress-fill {
       height: 100%;
-      background: limegreen;
+      background: lime;
       width: 0%;
-      transition: width 0.3s ease;
     }
 
-    .mile-marker {
-      position: absolute;
-      top: 100%;
-      transform: translateY(2px);
-      font-size: 12px;
-      color: #ccc;
-    }
-
-    .mile-marker::after {
-      content: "";
-      position: absolute;
-      top: -16px;
-      left: 50%;
-      width: 2px;
-      height: 16px;
-      background: #888;
+    #lapCount {
+      text-align: center;
+      margin-top: 5px;
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
+  <div id="controls">
+    <label>🚶 <input type="number" id="lapsPerMile"> laps/mile</label><br>
+    <label>⏱️ <input type="number" id="goalTime"> min</label>
+    <br>
+    <button onclick="toggleRoad()">Road Mode</button>
+    <button onclick="startStop()">Start</button>
+  </div>
 
-<div class="container">
-  <div class="track-area">
-    <div class="track-outer" id="trackOuter">
-      <div class="track-inner"></div>
-      <div id="pacerDot" class="dot"></div>
-      <div id="walkerIcon" class="walker">🚶‍♂️</div>
+  <div id="trackContainer">
+    <div id="track">
+      <div class="dot" id="pacerDot"></div>
+      <div class="walker" id="walkerIcon"></div>
     </div>
   </div>
 
-  <div class="right-panel">
-    <div class="stat-block" id="lapText">Lap 0/12</div>
-    <div class="stat-block" id="timeText">Time: 00:00</div>
-    <div class="stat-block" id="paceText">Pace: --</div>
-    <div class="stat-block" id="estText">Est: --:--</div>
+  <div id="lapCount">Lap: 0 / 12</div>
+  <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="stats">Time: 0 | Pace: 0 | Est. Finish: 0</div>
 
-    <div class="input-block">
-      <div class="input-group">
-        <input type="number" id="lapsPerMile" maxlength="2" value="4">
-        <label for="lapsPerMile">laps/mile</label>
-      </div>
-      <div class="input-group">
-        <input type="number" id="goalTime" maxlength="2" value="45">
-        <label for="goalTime">min total</label>
-      </div>
-    </div>
+  <script>
+    window.onload = function () {
+      document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
+      document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
+    };
 
-    <div class="button-row">
-      <button onclick="startOrStop()">Start</button>
-      <button onclick="switchToRoadMode()">Road Mode</button>
-    </div>
-  </div>
-</div>
+    function toggleRoad() {
+      window.location.href = "road.html";
+    }
 
-<!-- Progress Bar -->
-<div class="progress-bar">
-  <div class="progress-fill" id="distanceFill"></div>
-  <div class="mile-marker" style="left: 0%">0</div>
-  <div class="mile-marker" style="left: 33%">1</div>
-  <div class="mile-marker" style="left: 66%">2</div>
-  <div class="mile-marker" style="left: 99%">3</div>
-</div>
-
-<script src="app.js"></script>
+    function startStop() {
+      alert("Track mode started – logic not implemented here");
+    }
+  </script>
 </body>
 </html>
