@@ -14,13 +14,6 @@
       font-family: 'Segoe UI', sans-serif;
     }
 
-    #gpsDisplay {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 14px;
-    }
-
     .container {
       display: flex;
       flex-direction: row;
@@ -37,12 +30,12 @@
     }
 
     .track-outer {
-      height: 75vh;
-      width: 100px; /* slightly wider than before */
+      height: 80vh;
+      width: 120px;
       background: #222;
       border-left: 6px solid gray;
       border-right: 6px solid gray;
-      border-radius: 60px;
+      border-radius: 70px / 40px; /* scaled to resemble 400m oval */
       position: relative;
     }
 
@@ -54,7 +47,7 @@
       bottom: 10px;
       border-left: 2px solid #444;
       border-right: 2px solid #444;
-      border-radius: 50px;
+      border-radius: 60px / 35px;
     }
 
     .dot, .walker {
@@ -91,21 +84,47 @@
       margin-bottom: 10px;
     }
 
-    .input-block input, .input-block button {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
+    .input-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .input-block button {
+    .input-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-group input {
+      width: 40px;
+      font-size: 16px;
+      padding: 5px;
+      border-radius: 4px;
+      border: none;
+      text-align: center;
+    }
+
+    .input-group label {
+      font-size: 14px;
+      margin-left: 5px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .button-row button {
+      flex: 1;
+      padding: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
       background-color: #f44336;
       color: white;
-      font-weight: bold;
-      width: 120px;
-      margin: 6px auto;
     }
 
     .progress-bar {
@@ -146,8 +165,6 @@
 </head>
 <body>
 
-<div id="gpsDisplay">GPS: --</div>
-
 <div class="container">
   <div class="track-area">
     <div class="track-outer" id="trackOuter">
@@ -164,15 +181,24 @@
     <div class="stat-block" id="estText">Est: --:--</div>
 
     <div class="input-block">
-      <input type="number" id="lapsPerMile" placeholder="Laps Per Mile" value="4" />
-      <input type="number" id="goalTime" placeholder="Goal Time (minutes)" value="45" />
+      <div class="input-group">
+        <input type="number" id="lapsPerMile" maxlength="2" value="4">
+        <label for="lapsPerMile">laps/mile</label>
+      </div>
+      <div class="input-group">
+        <input type="number" id="goalTime" maxlength="2" value="45">
+        <label for="goalTime">min total</label>
+      </div>
+    </div>
+
+    <div class="button-row">
       <button onclick="startOrStop()">Start</button>
       <button onclick="switchToRoadMode()">Road Mode</button>
     </div>
   </div>
 </div>
 
-<!-- Progress Bar with Markers -->
+<!-- Progress Bar -->
 <div class="progress-bar">
   <div class="progress-fill" id="distanceFill"></div>
   <div class="mile-marker" style="left: 0%">0</div>
