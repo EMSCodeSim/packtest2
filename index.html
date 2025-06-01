@@ -7,36 +7,30 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 0;
-      background: #121212;
+      font-family: Arial, sans-serif;
+      background: #101010;
       color: white;
     }
 
     .screen {
       display: none;
-      padding: 16px;
       max-width: 480px;
       margin: auto;
+      text-align: center;
     }
 
     .active {
       display: block;
     }
 
-    h1, h2 {
-      text-align: center;
-      color: #ff4c4c;
+    h1 {
+      color: #f44336;
+      padding: 16px;
     }
 
-    p {
-      text-align: center;
-    }
-
-    button, select, input {
-      display: block;
-      width: 90%;
+    button, input {
+      width: 80%;
       margin: 10px auto;
       padding: 12px;
       font-size: 18px;
@@ -45,122 +39,126 @@
     }
 
     button {
-      background: #ff4c4c;
+      background-color: #f44336;
       color: white;
       font-weight: bold;
     }
 
     input {
-      background: #fff;
-      color: #000;
+      background-color: white;
+      color: black;
     }
 
     #trackScreen {
-      position: relative;
       width: 100vw;
       height: 100vh;
+      position: relative;
       overflow: hidden;
     }
 
-    #trackSVG {
+    #tallTrack {
+      height: 75vh;
       width: 100%;
-      height: 85vh;
-      display: block;
+      background: repeating-linear-gradient(#333, #333 2px, #222 4px);
+      border-left: 10px solid gray;
+      border-right: 10px solid gray;
+      position: relative;
     }
 
-    #trackEstimateText, #lapCounterText, #timeText, #paceText {
+    #pacerDot, #walkerIcon {
+      width: 30px;
+      height: 30px;
       position: absolute;
-      color: #ffcc00;
-      font-size: 22px;
-      font-weight: bold;
-      text-align: center;
-      width: 100%;
-    }
-
-    #trackEstimateText { top: 25%; }
-    #lapCounterText { top: 35%; }
-    #timeText { top: 45%; }
-    #paceText { top: 55%; }
-
-    #trackBtnGroup {
-      position: absolute;
-      bottom: 20px;
-      width: 100%;
-      text-align: center;
-    }
-
-    #trackBtnGroup button {
-      width: 40%;
-      margin: 10px;
-    }
-
-    #lapProgress {
-      height: 10px;
-      background: #444;
-      border-radius: 5px;
-      margin: 5px 16px;
-      overflow: hidden;
-    }
-
-    #lapProgressFill {
-      height: 100%;
-      background: lime;
-      width: 0%;
+      border-radius: 50%;
+      top: 0;
     }
 
     #pacerDot {
-      r: 6;
-      fill: limegreen;
+      background-color: lime;
+      left: calc(50% - 40px);
     }
 
     #walkerIcon {
-      display: none;
+      background-color: #ffcc00;
+      left: calc(50% + 10px);
+    }
+
+    #trackStats {
+      position: absolute;
+      top: 30%;
+      width: 100%;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+    }
+
+    #distanceBar {
+      height: 10px;
+      margin: 5px 16px;
+      background: #555;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    #distanceFill {
+      height: 100%;
+      background: limegreen;
+      width: 0%;
+    }
+
+    #bottomButtons {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+    }
+
+    #bottomButtons button {
+      width: 45%;
+      padding: 12px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Welcome Screen -->
-  <div id="welcomeScreen" class="screen active">
-    <h1>🚒 Pack Test Tracker</h1>
-    <p><strong>Choose Your Mode</strong></p>
-    <button onclick="selectMode('track')">🏟️ Track Mode</button>
-    <p>Perfect for circular tracks. You'll set laps per mile and follow a visual oval.</p>
-    <button onclick="selectMode('road')">🛣️ Road Mode</button>
-    <p>Perfect for linear or unknown paths. Uses GPS and shows your location and pacing.</p>
-  </div>
+<div id="welcomeScreen" class="screen active">
+  <h1>Pack Test Tracker</h1>
+  <p>Select Mode:</p>
+  <button onclick="selectMode('track')">Track Mode</button>
+  <p>Great for circular tracks</p>
+  <button onclick="selectMode('road')">Road Mode</button>
+  <p>Great for linear tests</p>
+</div>
 
-  <!-- Settings Screen -->
-  <div id="settingsScreen" class="screen">
-    <h2>Setup</h2>
-    <div id="lapsPerMileGroup">
-      <input type="number" id="lapsPerMile" placeholder="Laps Per Mile" value="4" />
-    </div>
-    <input type="number" id="goalTime" placeholder="Goal Time (minutes)" value="45" />
-    <button onclick="startTest()">Start</button>
-  </div>
+<div id="settingsScreen" class="screen">
+  <h1>Setup</h1>
+  <input type="number" id="lapsPerMile" placeholder="Laps Per Mile" value="4" />
+  <input type="number" id="goalTime" placeholder="Goal Time (minutes)" value="45" />
+  <button onclick="startTest()">Start</button>
+</div>
 
-  <!-- Track Screen -->
-  <div id="trackScreen" class="screen">
-    <svg id="trackSVG" viewBox="0 0 300 200">
-      <ellipse cx="150" cy="100" rx="100" ry="85" stroke="#888" stroke-width="4" fill="none"/>
-      <circle id="pacerDot" cx="150" cy="15" r="6" fill="lime" />
-    </svg>
-
-    <div id="trackEstimateText">--:--</div>
-    <div id="lapCounterText">Lap 0 of 12</div>
-    <div id="timeText">Time: 00:00</div>
-    <div id="paceText">Pace: --</div>
-
-    <div id="lapProgress">
-      <div id="lapProgressFill"></div>
-    </div>
-
-    <div id="trackBtnGroup">
-      <button onclick="stopTest()">Stop</button>
+<div id="trackScreen" class="screen">
+  <div id="tallTrack">
+    <div id="pacerDot"></div>
+    <div id="walkerIcon"></div>
+    <div id="trackStats">
+      <div id="lapCountText">Lap 0/12</div>
+      <div id="timeText">Time: 00:00</div>
+      <div id="paceText">Pace: --</div>
+      <div id="estimateText">Est: --:--</div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <div id="distanceBar">
+    <div id="distanceFill"></div>
+  </div>
+
+  <div id="bottomButtons">
+    <button onclick="stopTest()">Stop</button>
+    <button onclick="switchToRoadMode()">Road Mode</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
