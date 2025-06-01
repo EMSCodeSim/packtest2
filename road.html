@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Road Mode</title>
   <style>
@@ -14,24 +14,23 @@
 
     .road-container {
       position: relative;
+      height: 85vh;
       width: 100%;
-      height: 90vh;
       display: flex;
       flex-direction: row;
     }
 
     .road {
       flex: 1;
-      position: relative;
       background: #333;
       margin: 10px;
-      border-radius: 20px;
+      border-radius: 10px;
+      position: relative;
       overflow: hidden;
     }
 
     .pacer, .walker {
       position: absolute;
-      left: 40%;
       width: 24px;
       height: 24px;
       transform: translateX(-50%);
@@ -40,6 +39,7 @@
     .pacer {
       background: limegreen;
       border-radius: 50%;
+      left: 40%;
       z-index: 2;
     }
 
@@ -50,12 +50,13 @@
     }
 
     .markers {
-      width: 40px;
-      margin-top: 10px;
+      width: 50px;
+      padding-top: 10px;
+      padding-bottom: 10px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
     }
 
     .markers div {
@@ -68,7 +69,7 @@
     }
 
     .input-group {
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .input-group input {
@@ -78,14 +79,18 @@
       margin-right: 4px;
     }
 
+    .input-group label {
+      font-size: 13px;
+    }
+
     button {
-      margin: 6px;
-      padding: 8px 16px;
+      padding: 10px 20px;
       font-weight: bold;
       border: none;
       border-radius: 6px;
       background: #f44336;
       color: white;
+      margin: 6px;
     }
   </style>
 </head>
@@ -97,10 +102,10 @@
     <div id="walkerIcon" class="walker">🚶‍♂️</div>
   </div>
   <div class="markers">
-    <div>3 mi</div>
-    <div>2 mi</div>
-    <div>1 mi</div>
-    <div>0 mi</div>
+    <div>3.0 mi</div>
+    <div>2.0</div>
+    <div>1.0</div>
+    <div>0.0</div>
   </div>
 </div>
 
@@ -113,64 +118,53 @@
     <input type="number" id="goalTime" value="45" maxlength="2">
     <label>min total</label>
   </div>
-  <button onclick="startRoad()">Start</button>
+  <button onclick="toggleRoad()">Start/Stop</button>
 </div>
 
 <script>
-let roadStartTime;
-let roadAnimation;
-let isRunning = false;
-let totalDistance = 3; // miles
+let isRoadRunning = false;
+let startTime;
+let animationFrame;
+let userProgress = 0;
 
-function startRoad() {
-  if (isRunning) {
-    cancelAnimationFrame(roadAnimation);
-    isRunning = false;
+function toggleRoad() {
+  if (isRoadRunning) {
+    cancelAnimationFrame(animationFrame);
+    isRoadRunning = false;
     return;
   }
 
-  isRunning = true;
-  roadStartTime = Date.now();
-  const goalTime = parseFloat(document.getElementById("goalTime").value) || 45;
-  animatePacerUp(goalTime);
-  animateWalkerUp();
-}
+  isRoadRunning = true;
+  startTime = Date.now();
+  userProgress = 0;
 
-function animatePacerUp(goalMinutes) {
-  const road = document.getElementById("road");
-  const height = road.clientHeight;
-  const duration = goalMinutes * 60 * 1000; // ms
+  const goalMinutes = parseFloat(document.getElementById('goalTime').value) || 45;
+  const totalDistance = 3; // miles
+  const duration = goalMinutes * 60 * 1000; // in ms
+
+  const roadElement = document.getElementById('road');
+  const roadHeight = roadElement.clientHeight;
 
   function step() {
-    const elapsed = Date.now() - roadStartTime;
+    const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    const y = height - progress * height;
-    document.getElementById("pacerDot").style.top = `${y}px`;
+    const yPacer = roadHeight - progress * roadHeight;
+    const yWalker = roadHeight - userProgress * roadHeight;
 
-    if (progress < 1) {
-      roadAnimation = requestAnimationFrame(step);
+    document.getElementById('pacerDot').style.top = `${yPacer}px`;
+    document.getElementById('walkerIcon').style.top = `${yWalker}px`;
+
+    // Simulate walker moving 90% as fast as pacer
+    userProgress = Math.min(userProgress + 0.00025, 1);
+
+    if (progress < 1 && isRoadRunning) {
+      animationFrame = requestAnimationFrame(step);
     }
   }
 
-  roadAnimation = requestAnimationFrame(step);
-}
-
-function animateWalkerUp() {
-  // For now, walker mirrors pacer for testing
-  const road = document.getElementById("road");
-  const height = road.clientHeight;
-
-  let y = height;
-  function step() {
-    if (!isRunning) return;
-    y -= 0.5; // Simulated speed
-    if (y < 0) y = 0;
-    document.getElementById("walkerIcon").style.top = `${y}px`;
-    requestAnimationFrame(step);
-  }
-
-  step();
+  animationFrame = requestAnimationFrame(step);
 }
 </script>
+
 </body>
 </html>
