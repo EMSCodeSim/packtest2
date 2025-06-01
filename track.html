@@ -103,9 +103,9 @@
         <label>🚶 <input type="number" id="lapsPerMile"> laps/mile</label><br>
         <label>⏱️ <input type="number" id="goalTime"> min</label><br>
         <button onclick="toggleRoad()">Road Mode</button>
-        <button onclick="startStop()" id="startBtn">Start</button>
+        <button onclick="startStop()">Start</button>
         <div id="lapCount">Lap: 0 / 12</div>
-        <div id="stats">Time: 0:00 | Pace: 0.00 min/lap</div>
+        <div id="stats">Time: 0:00 | Pace: 0.00 min/mile</div>
         <div id="distanceCenter">Distance: 0.00 mi</div>
         <div id="estFinishTime">Est. Finish: 0:00</div>
       </div>
@@ -115,45 +115,69 @@
   <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
   <script>
-    let startTime, timerInterval;
     let isRunning = false;
-
-    window.onload = function () {
-      document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
-      document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
-    };
+    let startTime, watchId;
+    let distance = 0;
+    let lastCoords = null;
 
     function toggleRoad() {
       window.location.href = "road.html";
     }
 
     function startStop() {
-      const btn = document.getElementById("startBtn");
-      if (isRunning) {
-        clearInterval(timerInterval);
-        btn.textContent = "Start";
-        isRunning = false;
-      } else {
-        startTime = Date.now();
-        timerInterval = setInterval(updateTime, 1000);
-        btn.textContent = "Stop";
+      if (!isRunning) {
         isRunning = true;
+        startTime = Date.now();
+        watchId = navigator.geolocation.watchPosition(updatePosition, err => console.error(err), {
+          enableHighAccuracy: true
+        });
+        requestAnimationFrame(updateDisplay);
+      } else {
+        isRunning = false;
+        navigator.geolocation.clearWatch(watchId);
       }
     }
 
-    function updateTime() {
-      const now = Date.now();
-      const elapsed = Math.floor((now - startTime) / 1000);
-      const minutes = Math.floor(elapsed / 60);
-      const seconds = elapsed % 60;
-      const pacePerLap = (elapsed / 60).toFixed(2);
-
-      document.getElementById("stats").textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')} | Pace: ${pacePerLap} min/lap`;
-
-      const goalTime = parseFloat(document.getElementById("goalTime").value);
-      const estFinish = goalTime; // Placeholder for actual pace logic
-      document.getElementById("estFinishTime").textContent = `Est. Finish: ${estFinish}:00`;
+    function updatePosition(pos) {
+      const { latitude, longitude } = pos.coords;
+      if (lastCoords) {
+        const d = haversine(lastCoords.lat, lastCoords.lon, latitude, longitude);
+        if (d > 0.001) distance += d;
+      }
+      lastCoords = { lat: latitude, lon: longitude };
     }
+
+    function updateDisplay() {
+      if (!isRunning) return;
+
+      const now = Date.now();
+      const elapsed = (now - startTime) / 1000;
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = Math.floor(elapsed % 60);
+
+      const pace = distance > 0 ? (elapsed / 60) / distance : 0;
+      const estFinish = pace > 0 ? (3 - distance) * pace : 0;
+
+      document.getElementById('stats').textContent = `Time: ${minutes}:${seconds < 10 ? '0' : ''}${seconds} | Pace: ${pace.toFixed(2)} min/mile`;
+      document.getElementById('distanceCenter').textContent = `Distance: ${distance.toFixed(2)} mi`;
+      document.getElementById('estFinishTime').textContent = `Est. Finish: ${Math.floor(estFinish)}:${Math.floor((estFinish % 1) * 60).toString().padStart(2, '0')}`;
+      document.getElementById('progressFill').style.width = `${Math.min(distance / 3 * 100, 100)}%`;
+
+      requestAnimationFrame(updateDisplay);
+    }
+
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 3958.8;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    window.onload = function () {
+      document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
+      document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
+    };
   </script>
 </body>
 </html>
