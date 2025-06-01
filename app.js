@@ -66,5 +66,5 @@ function startOrStop() {
 }
 
 function switchToRoadMode() {
-  alert("Road Mode not yet implemented.");
+  alert("Road Mode coming soon.");
 }
