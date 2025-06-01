@@ -40,7 +40,7 @@
 
     #trackInfo {
       position: absolute;
-      top: 40px;
+      top: 30px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -90,9 +90,9 @@
         <label>🚶 <input type="number" id="lapsPerMile"> laps/mile</label><br>
         <label>⏱️ <input type="number" id="goalTime"> min</label><br>
         <button onclick="toggleRoad()">Road Mode</button>
-        <button onclick="startStop()" id="startButton">Start</button>
+        <button onclick="startStop()">Start</button>
         <div id="lapCount">Lap: 0 / 12</div>
-        <div id="stats">Time: 0:00 | Pace: 0 min/mile | Est. Finish: 0 min</div>
+        <div id="stats">Time: 0:00 | Pace: 0.00 mph | Est. Finish: 0:00</div>
       </div>
     </div>
   </div>
@@ -102,14 +102,10 @@
   <script>
     let startTime, timerInterval;
     let elapsedSeconds = 0;
-    let running = false;
     const statsDisplay = document.getElementById("stats");
-    const pacerDot = document.getElementById("pacerDot");
-    const walkerIcon = document.getElementById("walkerIcon");
-    const track = document.getElementById("track");
-
-    let pacerAngle = 0;
-    let walkerAngle = 0;
+    let lastPosition = null;
+    let totalDistance = 0; // in meters
+    const METERS_IN_MILE = 1609.34;
 
     window.onload = function () {
       document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
@@ -121,16 +117,13 @@
     }
 
     function startStop() {
-      if (!running) {
+      if (!timerInterval) {
         startTime = Date.now();
         timerInterval = setInterval(updateTimer, 1000);
-        running = true;
-        document.getElementById("startButton").innerText = "Stop";
-        animatePacer();
+        navigator.geolocation.watchPosition(updateLocation, null, { enableHighAccuracy: true });
       } else {
         clearInterval(timerInterval);
-        running = false;
-        document.getElementById("startButton").innerText = "Start";
+        timerInterval = null;
       }
     }
 
@@ -139,29 +132,38 @@
       elapsedSeconds = Math.floor((now - startTime) / 1000);
       const minutes = Math.floor(elapsedSeconds / 60);
       const seconds = elapsedSeconds % 60;
-      const pace = document.getElementById("goalTime").value;
-      statsDisplay.innerText = `Time: ${minutes}:${seconds.toString().padStart(2, '0')} | Pace: ${pace} min/mile | Est. Finish: ${pace} min`;
+
+      let miles = totalDistance / METERS_IN_MILE;
+      let pace = miles > 0 ? elapsedSeconds / 60 / miles : 0;
+      let remaining = (3 - miles) * pace; // estimate for 3 miles
+
+      const paceText = pace.toFixed(2);
+      const estFinish = remaining > 0 ? `${Math.floor(remaining)}:${Math.floor((remaining % 1) * 60).toString().padStart(2, '0')}` : "0:00";
+      statsDisplay.innerText = `Time: ${minutes}:${seconds.toString().padStart(2, '0')} | Pace: ${paceText} min/mile | Est. Finish: ${estFinish}`;
     }
 
-    function animatePacer() {
-      if (!running) return;
-      pacerAngle = (pacerAngle + 0.5) % 360;
-      walkerAngle = (walkerAngle + 0.35) % 360;
-      moveDot(pacerDot, pacerAngle);
-      moveDot(walkerIcon, walkerAngle);
-      requestAnimationFrame(animatePacer);
+    function updateLocation(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      if (lastPosition) {
+        const d = calcDistance(lat, lon, lastPosition.lat, lastPosition.lon);
+        totalDistance += d;
+      }
+      lastPosition = { lat, lon };
     }
 
-    function moveDot(dot, angle) {
-      const radiusX = track.offsetWidth / 2 - 10;
-      const radiusY = track.offsetHeight / 2 - 10;
-      const centerX = track.offsetWidth / 2;
-      const centerY = track.offsetHeight / 2;
-      const rad = angle * (Math.PI / 180);
-      const x = centerX - radiusX * Math.cos(rad);
-      const y = centerY - radiusY * Math.sin(rad);
-      dot.style.left = x + 'px';
-      dot.style.top = y + 'px';
+    function calcDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // metres
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
     }
   </script>
 </body>
