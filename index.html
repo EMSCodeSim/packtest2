@@ -1,159 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pack Test Tracker</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
       background: #101010;
       color: white;
-    }
-
-    .screen {
-      display: none;
-      max-width: 480px;
-      margin: auto;
-      text-align: center;
-    }
-
-    .active {
-      display: block;
-    }
-
-    h1 {
-      color: #f44336;
-      padding: 16px;
-    }
-
-    button, input {
-      width: 80%;
-      margin: 10px auto;
-      padding: 12px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: none;
-    }
-
-    button {
-      background-color: #f44336;
-      color: white;
-      font-weight: bold;
-    }
-
-    input {
-      background-color: white;
-      color: black;
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     #trackScreen {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #tallTrack {
-      height: 75vh;
-      width: 100%;
-      background: repeating-linear-gradient(#333, #333 2px, #222 4px);
-      border-left: 10px solid gray;
-      border-right: 10px solid gray;
-      position: relative;
-    }
-
-    #pacerDot, #walkerIcon {
-      width: 30px;
-      height: 30px;
-      position: absolute;
-      border-radius: 50%;
-      top: 0;
-    }
-
-    #pacerDot {
-      background-color: lime;
-      left: calc(50% - 40px);
-    }
-
-    #walkerIcon {
-      background-color: #ffcc00;
-      left: calc(50% + 10px);
-    }
-
-    #trackStats {
-      position: absolute;
-      top: 30%;
-      width: 100%;
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
-      color: white;
-    }
-
-    #distanceBar {
-      height: 10px;
-      margin: 5px 16px;
-      background: #555;
-      border-radius: 5px;
-      overflow: hidden;
-    }
-
-    #distanceFill {
-      height: 100%;
-      background: limegreen;
-      width: 0%;
-    }
-
-    #bottomButtons {
+      flex: 1;
       display: flex;
-      justify-content: space-around;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
       padding: 10px;
     }
 
-    #bottomButtons button {
+    .track-container {
+      position: relative;
+      height: 75vh;
+      width: 60px;
+      background: #222;
+      border-radius: 30px;
+      border: 4px solid gray;
+      margin-top: 10px;
+    }
+
+    .dot {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    #pacerDot {
+      background-color: limegreen;
+    }
+
+    #walkerIcon {
+      font-size: 22px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .stats {
+      position: absolute;
+      top: 30%;
+      width: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .bar {
+      height: 10px;
+      width: 80%;
+      background: #333;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 10px auto;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: lime;
+      transition: width 0.3s ease;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      padding: 10px;
+    }
+
+    .button-row button {
       width: 45%;
       padding: 12px;
+      font-size: 16px;
+      background: #f44336;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-<div id="welcomeScreen" class="screen active">
-  <h1>Pack Test Tracker</h1>
-  <p>Select Mode:</p>
-  <button onclick="selectMode('track')">Track Mode</button>
-  <p>Great for circular tracks</p>
-  <button onclick="selectMode('road')">Road Mode</button>
-  <p>Great for linear tests</p>
-</div>
+<div id="trackScreen">
+  <h2>Pack Test Tracker</h2>
 
-<div id="settingsScreen" class="screen">
-  <h1>Setup</h1>
-  <input type="number" id="lapsPerMile" placeholder="Laps Per Mile" value="4" />
-  <input type="number" id="goalTime" placeholder="Goal Time (minutes)" value="45" />
-  <button onclick="startTest()">Start</button>
-</div>
+  <div class="track-container" id="trackContainer">
+    <div id="pacerDot" class="dot"></div>
+    <div id="walkerIcon">🚶‍♂️</div>
 
-<div id="trackScreen" class="screen">
-  <div id="tallTrack">
-    <div id="pacerDot"></div>
-    <div id="walkerIcon"></div>
-    <div id="trackStats">
-      <div id="lapCountText">Lap 0/12</div>
+    <div class="stats">
+      <div id="lapText">Lap 0/12</div>
       <div id="timeText">Time: 00:00</div>
       <div id="paceText">Pace: --</div>
-      <div id="estimateText">Est: --:--</div>
+      <div id="estText">Est: --:--</div>
     </div>
   </div>
 
-  <div id="distanceBar">
-    <div id="distanceFill"></div>
-  </div>
+  <div class="bar"><div class="bar-fill" id="distanceFill"></div></div>
 
-  <div id="bottomButtons">
+  <div class="button-row">
     <button onclick="stopTest()">Stop</button>
     <button onclick="switchToRoadMode()">Road Mode</button>
   </div>
