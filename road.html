@@ -5,10 +5,12 @@ let watchID;
 let lastPosition = null;
 let totalDistance = 0;
 let pace = 0;
+let distanceMeters = 0;
 
 const roadContainer = document.getElementById("roadContainer");
 const pacerDot = document.getElementById("pacerDot");
 const userIcon = document.getElementById("userIcon");
+const centerLine = document.getElementById("centerLine");
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -20,7 +22,11 @@ function startRoadTest() {
   goalTime = parseFloat(document.getElementById("goalTime").value);
   startTime = Date.now();
   totalDistance = 0;
+  distanceMeters = 0;
   lastPosition = null;
+
+  updateDottedLine(); // reset line to top
+  centerLine.style.height = "200%"; // keep it longer than container
 
   if (navigator.geolocation) {
     watchID = navigator.geolocation.watchPosition(gpsSuccess, gpsError, {
@@ -47,13 +53,16 @@ function gpsSuccess(position) {
       lastPosition.latitude, lastPosition.longitude,
       current.latitude, current.longitude
     );
-
-    const timeElapsed = (now - lastPosition.timestamp) / 1000;
+    const distMeters = dist * 1609.34;
+    distanceMeters += distMeters;
     totalDistance += dist;
 
+    const timeElapsed = (now - lastPosition.timestamp) / 1000;
     pace = (dist / (timeElapsed / 3600)); // mph
+
     updateStats();
     updatePacerDot();
+    updateDottedLine();
 
     const percent = Math.min((totalDistance / 3) * 100, 100);
     document.getElementById("distanceFill").style.width = `${percent}%`;
@@ -81,19 +90,19 @@ function gpsError(err) {
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 3958.8; // miles
+  const R = 6371; // km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.cos(lat1 * Math.PI / 180) *
+            Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c * 0.621371; // miles
 }
 
 function updateTimer() {
   const elapsed = (Date.now() - startTime) / 1000;
-
-  // Recalculate pacer location vs user
   updatePacerDot();
 }
 
@@ -108,6 +117,12 @@ function updatePacerDot() {
   const yOffset = distanceGap * containerHeight / 3;
   const topPercent = 50 - (yOffset / containerHeight) * 100;
   pacerDot.style.top = `${topPercent}%`;
+}
+
+function updateDottedLine() {
+  // Each 3 meters = shift 30px downward
+  const shift = -(distanceMeters / 3) * 30;
+  centerLine.style.top = `${shift}px`;
 }
 
 function updateStats() {
