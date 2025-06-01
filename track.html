@@ -100,6 +100,12 @@
   <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
   <script>
+    let angle = 0;
+    let walkerAngle = 0;
+    let interval;
+    let startTime;
+    let gpsSpeed = 0;
+
     window.onload = function () {
       document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
       document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
@@ -110,7 +116,44 @@
     }
 
     function startStop() {
-      alert("Track mode started – logic not implemented here");
+      const laps = parseFloat(document.getElementById('lapsPerMile').value);
+      const goalTime = parseFloat(document.getElementById('goalTime').value);
+      const lapDistance = 1609.34 / laps; // meters per lap
+      const lapTime = (goalTime * 60) / laps; // seconds per lap
+      const angularSpeed = 360 / lapTime; // degrees per second
+      startTime = Date.now();
+
+      if (interval) clearInterval(interval);
+      interval = setInterval(() => {
+        const now = Date.now();
+        const elapsed = (now - startTime) / 1000;
+        angle = (elapsed * angularSpeed) % 360;
+        updateDot('pacerDot', angle);
+
+        // move walker by GPS speed if available
+        walkerAngle += gpsSpeed * 0.5; // adjust multiplier as needed
+        walkerAngle = walkerAngle % 360;
+        updateDot('walkerIcon', walkerAngle);
+      }, 1000);
+
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(pos => {
+          if (pos.coords.speed) gpsSpeed = pos.coords.speed;
+        });
+      }
+    }
+
+    function updateDot(id, deg) {
+      const el = document.getElementById(id);
+      const radiusX = document.getElementById('track').offsetWidth / 2 - 20;
+      const radiusY = document.getElementById('track').offsetHeight / 2 - 20;
+      const centerX = document.getElementById('track').offsetWidth / 2;
+      const centerY = document.getElementById('track').offsetHeight / 2;
+      const rad = deg * Math.PI / 180;
+      const x = centerX + radiusX * Math.cos(rad);
+      const y = centerY + radiusY * Math.sin(rad);
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
     }
   </script>
 </body>
