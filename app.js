@@ -1,87 +1,63 @@
-let mode = null;
-let lapsPerMile = 4;
-let lapGoal = 12;
 let lapCount = 0;
-let goalTime = 45;
+let lapGoal = 12;
 let startTime;
 let timer;
-let currentDistance = 0;
+let pace = 0;
 
-function selectMode(selectedMode) {
-  mode = selectedMode;
-  document.getElementById('welcomeScreen').classList.remove('active');
-  document.getElementById('settingsScreen').classList.add('active');
+function formatTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function startTest() {
-  lapsPerMile = parseInt(document.getElementById('lapsPerMile').value) || 4;
-  goalTime = parseFloat(document.getElementById('goalTime').value) || 45;
-  lapGoal = lapsPerMile * 3;
+function startTrack(goalMinutes = 45) {
   startTime = Date.now();
-  document.getElementById('settingsScreen').classList.remove('active');
-  document.getElementById('trackScreen').classList.add('active');
-
-  if (mode === 'track') {
-    startTrack();
-  } else {
-    startRoadMode();
-  }
+  timer = setInterval(() => updateStats(goalMinutes), 1000);
+  animateDots(goalMinutes);
 }
 
 function stopTest() {
   clearInterval(timer);
-  alert("Test stopped");
+  alert("Test Ended");
   location.reload();
 }
 
-function startTrack() {
-  lapCount = 0;
-  timer = setInterval(updateTrackStats, 1000);
-  animateDots();
+function updateStats(goalMinutes) {
+  const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById("timeText").textContent = `Time: ${formatTime(elapsedSec)}`;
+
+  const miles = lapCount / 4; // 4 laps/mile
+  pace = miles > 0 ? (elapsedSec / 60) / miles : 0;
+  document.getElementById("paceText").textContent = `Pace: ${pace ? pace.toFixed(2) : "--"}`;
+
+  const estTime = pace > 0 ? pace * 3 : 0;
+  document.getElementById("estText").textContent = `Est: ${pace ? formatTime(Math.round(estTime * 60)) : "--:--"}`;
+
+  document.getElementById("lapText").textContent = `Lap ${lapCount}/${lapGoal}`;
+  document.getElementById("distanceFill").style.width = `${(lapCount / lapGoal) * 100}%`;
 }
 
-function updateTrackStats() {
-  const elapsed = (Date.now() - startTime) / 1000;
-  const min = Math.floor(elapsed / 60);
-  const sec = Math.floor(elapsed % 60);
-  const pace = (lapCount / lapsPerMile) > 0 ? (elapsed / 60) / (lapCount / lapsPerMile) : 0;
-  const est = pace > 0 ? (3 * pace).toFixed(2) : '--';
+function animateDots(goalMinutes) {
+  const trackHeight = document.getElementById("trackContainer").offsetHeight - 40;
+  let angle = 0;
 
-  document.getElementById('lapCountText').textContent = `Lap ${lapCount}/${lapGoal}`;
-  document.getElementById('timeText').textContent = `Time: ${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-  document.getElementById('paceText').textContent = `Pace: ${pace ? pace.toFixed(2) : '--'}`;
-  document.getElementById('estimateText').textContent = `Est: ${formatTime(est)}`;
-
-  let progress = ((lapCount / lapGoal) * 100).toFixed(1);
-  document.getElementById('distanceFill').style.width = `${progress}%`;
-}
-
-function animateDots() {
-  const trackHeight = document.getElementById('tallTrack').clientHeight;
-  const update = () => {
+  function frame() {
     const elapsed = (Date.now() - startTime) / 1000;
-    const percent = (elapsed / (goalTime * 60)) % 1;
-    const y = percent * (trackHeight - 30);
+    const percent = (elapsed / (goalMinutes * 60)) % 1;
 
-    document.getElementById('pacerDot').style.top = `${y}px`;
-    document.getElementById('walkerIcon').style.top = `${y}px`;
+    const y = percent * trackHeight;
+    document.getElementById("pacerDot").style.top = `${y}px`;
+    document.getElementById("walkerIcon").style.top = `${y}px`;
 
     if (percent >= 0.99) lapCount++;
-    requestAnimationFrame(update);
-  };
-  update();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
 }
 
 function switchToRoadMode() {
   alert("Road Mode coming soon.");
 }
 
-function formatTime(mins) {
-  if (mins === '--') return '--:--';
-  let m = Math.floor(mins);
-  let s = Math.round((mins - m) * 60);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-// Optional: Auto-enable GPS
-navigator.geolocation?.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: true });
+// Start automatically for demo/testing
+startTrack(45);
