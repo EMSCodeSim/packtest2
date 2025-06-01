@@ -1,84 +1,64 @@
-let startTime, timerInterval;
-let totalDistance = 0;
-let previousPosition = null;
-let mode = 'track';
-let lapCount = 0;
-let lapGoal = 12;
-let watchId;
-let goalTime = 45;
+let mode = null;
 let lapsPerMile = 4;
+let goalTime = 45;
+let lapGoal = 12;
+let lapCount = 0;
+let totalDistance = 0;
+let startTime = null;
+let timerInterval = null;
 
-const timeDisplay = document.getElementById('time');
-const paceDisplay = document.getElementById('pace');
-const distanceLabel = document.getElementById('distance-label');
-const distanceBar = document.getElementById('distance-bar-fill');
-const modeSelector = document.getElementById('modeSelector');
-const lapsPerMileInput = document.getElementById('lapsPerMile');
-const track = document.getElementById('track');
-const mapDiv = document.getElementById('map');
-const gpsBar = document.getElementById('gps-progress-container');
-const roadEstimate = document.getElementById('roadEstimateText');
-
-modeSelector.addEventListener('change', () => {
-  mode = modeSelector.value;
-  updateModeUI();
-});
-
-function updateModeUI() {
-  track.classList.toggle('hidden', mode !== 'track');
-  mapDiv.classList.toggle('hidden', mode !== 'gps');
-  gpsBar.classList.toggle('hidden', mode !== 'gps');
-  document.getElementById('lapsPerMileContainer').classList.toggle('hidden', mode !== 'track');
+// Welcome screen logic
+function selectMode(selected) {
+  mode = selected;
+  document.getElementById('welcomeScreen').classList.remove('active');
+  document.getElementById('settingsScreen').classList.add('active');
+  document.getElementById('lapsPerMileGroup').style.display = (mode === 'track') ? 'block' : 'none';
 }
 
-document.getElementById('startBtn').addEventListener('click', () => {
-  startTime = Date.now();
-  timerInterval = setInterval(updateTime, 1000);
-  goalTime = parseFloat(document.getElementById('goalTime').value);
-  lapsPerMile = parseFloat(lapsPerMileInput.value);
-  lapGoal = lapsPerMile * 3;
-
-  if (mode === 'gps') {
-    initializeMap();
-    startGPS();
-  }
-
-  document.getElementById('startBtn').disabled = true;
-  document.getElementById('stopBtn').disabled = false;
-});
-
-document.getElementById('stopBtn').addEventListener('click', () => {
-  clearInterval(timerInterval);
-  if (watchId) navigator.geolocation.clearWatch(watchId);
-  document.getElementById('startBtn').disabled = false;
-  document.getElementById('stopBtn').disabled = true;
-});
-
-function updateTime() {
-  const now = Date.now();
-  const diff = Math.floor((now - startTime) / 1000);
-  const min = String(Math.floor(diff / 60)).padStart(2, '0');
-  const sec = String(diff % 60).padStart(2, '0');
-  timeDisplay.textContent = `${min}:${sec}`;
-
-  const miles = totalDistance / 1609.34;
-  const pace = miles > 0 ? (diff / 60) / miles : 0;
-  paceDisplay.textContent = pace.toFixed(2);
-
-  const percent = Math.min((miles / 3) * 100, 100);
-  distanceBar.style.width = percent + "%";
-  distanceLabel.textContent = `${miles.toFixed(2)} / 3.00 miles`;
-
-  const remaining = 3 - miles;
-  const estFinishMin = pace > 0 ? remaining * pace : 0;
-  const est = isFinite(estFinishMin) ? formatTime(estFinishMin) : '--:--';
-
+// Start test logic
+function startTest() {
+  goalTime = parseFloat(document.getElementById('goalTime').value) || 45;
   if (mode === 'track') {
-    document.getElementById('trackEstimateText').textContent = est;
-    document.getElementById('lapCounter').textContent = `Lap ${lapCount} of ${lapGoal}`;
-  } else if (mode === 'gps') {
-    roadEstimate.textContent = est;
+    lapsPerMile = parseFloat(document.getElementById('lapsPerMile').value) || 4;
+    lapGoal = lapsPerMile * 3;
+    document.getElementById('settingsScreen').classList.remove('active');
+    document.getElementById('trackScreen').classList.add('active');
+    startTrackMode();
   }
+  // Future: Road mode logic here
+}
+
+// Stop logic
+function stopTest() {
+  clearInterval(timerInterval);
+  alert("Test Ended");
+  location.reload();
+}
+
+// Timer & Animation
+function startTrackMode() {
+  startTime = Date.now();
+  timerInterval = setInterval(updateTrackStats, 1000);
+  animateDots();
+}
+
+function updateTrackStats() {
+  const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+  const minutes = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+  const seconds = String(elapsedSec % 60).padStart(2, '0');
+  document.getElementById('timeText').textContent = `Time: ${minutes}:${seconds}`;
+
+  const lapsCompleted = lapCount;
+  const miles = lapsCompleted / lapsPerMile;
+  const pace = miles > 0 ? (elapsedSec / 60) / miles : 0;
+  const paceDisplay = pace > 0 ? pace.toFixed(2) : '--';
+  document.getElementById('paceText').textContent = `Pace: ${paceDisplay}`;
+
+  const remainingMiles = 3 - miles;
+  const estFinishMin = pace > 0 ? remainingMiles * pace : 0;
+  const est = isFinite(estFinishMin) ? formatTime(estFinishMin) : '--:--';
+  document.getElementById('trackEstimateText').textContent = est;
+  document.getElementById('lapCounterText').textContent = `Lap ${lapsCompleted} of ${lapGoal}`;
 }
 
 function formatTime(mins) {
@@ -87,79 +67,43 @@ function formatTime(mins) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// ===== MAP =====
-let map, userMarker, trail = [];
+// Oval animation logic
+let angle = 0;
+function animateDots() {
+  const cx = 150;
+  const cy = 100;
+  const rx = 100;
+  const ry = 70;
+  let walkerAngle = 0;
+  let lapsDone = 0;
 
-function initializeMap() {
-  map = L.map('map').setView([0, 0], 16);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OSM'
-  }).addTo(map);
-}
+  function drawFrame() {
+    const elapsed = (Date.now() - startTime) / 1000;
+    const percentComplete = Math.min(elapsed / (goalTime * 60), 1);
+    angle = 360 * percentComplete;
 
-function startGPS() {
-  if (!navigator.geolocation) {
-    alert('GPS not supported');
-    return;
+    // PACER DOT
+    const rad = angle * Math.PI / 180;
+    const px = cx + rx * Math.cos(rad);
+    const py = cy - ry * Math.sin(rad);
+    document.getElementById('pacerDot').setAttribute('cx', px);
+    document.getElementById('pacerDot').setAttribute('cy', py);
+
+    // WALKER DOT (simulate lap progression every 20s)
+    walkerAngle += 0.3;
+    const wrad = walkerAngle * Math.PI / 180;
+    const wx = cx + rx * Math.cos(wrad);
+    const wy = cy - ry * Math.sin(wrad);
+    document.getElementById('walkerIcon').setAttribute('x', wx);
+    document.getElementById('walkerIcon').setAttribute('y', wy);
+
+    // Count laps if full rotation
+    if (walkerAngle >= 360) {
+      walkerAngle -= 360;
+      lapCount += 1;
+    }
+
+    requestAnimationFrame(drawFrame);
   }
-
-  watchId = navigator.geolocation.watchPosition(
-    position => {
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-      const currentPos = [lat, lon];
-
-      if (!userMarker) {
-        userMarker = L.marker(currentPos).addTo(map);
-      } else {
-        userMarker.setLatLng(currentPos);
-      }
-
-      map.setView(currentPos);
-
-      // Add trail polyline
-      trail.push(currentPos);
-      if (trail.length > 1) {
-        L.polyline(trail, { color: 'red' }).addTo(map);
-      }
-
-      if (previousPosition) {
-        const d = getDistance(previousPosition, position.coords);
-        totalDistance += d;
-      }
-      previousPosition = position.coords;
-
-      updateGPSBar();
-    },
-    err => alert('GPS error: ' + err.message),
-    { enableHighAccuracy: true }
-  );
-}
-
-function updateGPSBar() {
-  const bar = document.getElementById('gps-progress-container');
-  const pacer = document.getElementById('gps-pacer-dot');
-  const walker = document.getElementById('gps-user-icon');
-
-  const elapsed = (Date.now() - startTime) / 1000;
-  const totalSeconds = goalTime * 60;
-  const pacerPercent = Math.min((elapsed / totalSeconds) * 100, 100);
-
-  const miles = totalDistance / 1609.34;
-  const userPercent = Math.min((miles / 3) * 100, 100);
-
-  pacer.style.left = `${pacerPercent}%`;
-  walker.style.left = `${userPercent}%`;
-}
-
-function getDistance(prev, curr) {
-  const R = 6371000;
-  const toRad = x => x * Math.PI / 180;
-  const dLat = toRad(curr.latitude - prev.latitude);
-  const dLon = toRad(curr.longitude - prev.longitude);
-  const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(prev.latitude)) * Math.cos(toRad(curr.latitude)) *
-            Math.sin(dLon / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  requestAnimationFrame(drawFrame);
 }
