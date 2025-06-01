@@ -82,7 +82,7 @@ function pad(num) {
 
 function startGPSMode() {
   const goalTimeMin = parseFloat(document.getElementById("goalTime").value) || 45;
-  const goalPace = 3 / (goalTimeMin * 60); // 3 miles total goal
+  const goalPace = 3 / (goalTimeMin * 60); // miles per second
   gpsProgressWidth = document.getElementById("gps-progress-container").offsetWidth;
 
   gpsPacerX = 0;
@@ -95,6 +95,16 @@ function startGPSMode() {
     return;
   }
 
+  // Animate pacer movement
+  const goalSpeedPerSec = gpsProgressWidth / (goalTimeMin * 60);
+  clearInterval(pacerInterval);
+  pacerInterval = setInterval(() => {
+    gpsPacerX += goalSpeedPerSec;
+    if (gpsPacerX >= gpsProgressWidth) gpsPacerX = gpsProgressWidth;
+    gpsPacerDot.style.left = `${gpsPacerX}px`;
+  }, 1000);
+
+  // Watch user position
   watchId = navigator.geolocation.watchPosition(
     (pos) => {
       const { latitude, longitude } = pos.coords;
@@ -103,6 +113,7 @@ function startGPSMode() {
       if (map) {
         if (!marker) {
           marker = L.marker(current).addTo(map);
+          map.setView(current, 18); // initial zoom
         } else {
           marker.setLatLng(current);
         }
@@ -111,7 +122,7 @@ function startGPSMode() {
         if (pathLine) pathLine.setLatLngs(pathCoords);
         else pathLine = L.polyline(pathCoords, { color: 'blue', weight: 5 }).addTo(map);
 
-        map.setView(current, 18);
+        map.panTo(current); // keeps map centered
       }
 
       if (previousCoords) {
@@ -125,6 +136,12 @@ function startGPSMode() {
         const elapsedMin = (Date.now() - startTime) / 60000;
         const pace = miles > 0 ? elapsedMin / miles : 0;
         paceDisplay.textContent = pace > 0 ? pace.toFixed(2) : "--";
+
+        // Estimated finish
+        const estTime = pace * 3;
+        const estMin = Math.floor(estTime);
+        const estSec = Math.floor((estTime % 1) * 60);
+        trackEstimateText.textContent = isNaN(estMin) ? "--:--" : `${pad(estMin)}:${pad(estSec)}`;
 
         // Move user icon across GPS progress bar
         const progress = Math.min(1, miles / 3);
@@ -140,16 +157,6 @@ function startGPSMode() {
     },
     { enableHighAccuracy: true, maximumAge: 1000 }
   );
-
-  // Animate pacer
-  const goalSpeedPerSec = gpsProgressWidth / (goalTimeMin * 60);
-  gpsPacerX = 0;
-  clearInterval(pacerInterval);
-  pacerInterval = setInterval(() => {
-    gpsPacerX += goalSpeedPerSec;
-    if (gpsPacerX >= gpsProgressWidth) gpsPacerX = gpsProgressWidth;
-    gpsPacerDot.style.left = `${gpsPacerX}px`;
-  }, 1000);
 }
 
 function getDistance(c1, c2) {
