@@ -100,6 +100,10 @@
   <div id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
   <script>
+    let startTime, timerInterval;
+    let elapsedMinutes = 0;
+    const statsDisplay = document.getElementById("stats");
+
     window.onload = function () {
       document.getElementById('lapsPerMile').value = localStorage.getItem('lapsPerMile') || 4;
       document.getElementById('goalTime').value = localStorage.getItem('goalTime') || 45;
@@ -110,7 +114,23 @@
     }
 
     function startStop() {
-      alert("Track mode started – logic not implemented here");
+      if (!timerInterval) {
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+      } else {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function updateTimer() {
+      const now = Date.now();
+      elapsedMinutes = Math.floor((now - startTime) / 60000);
+      const lapsPerMile = parseFloat(document.getElementById("lapsPerMile").value);
+      const goalTime = parseFloat(document.getElementById("goalTime").value);
+      const pace = goalTime;
+      const estFinish = goalTime;
+      statsDisplay.innerText = `Time: ${elapsedMinutes} min | Pace: ${pace} min/mile | Est. Finish: ${estFinish} min`;
     }
   </script>
 </body>
